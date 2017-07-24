@@ -139,7 +139,15 @@ static void I2C_Write(I2C vm, byte slaveADX, byte * tx_buffer, byte numBytes, ui
 			if(intStatus & (INT_TX_ERROR | INT_BNB | INT_ARB_LOST)) {
 				ACCESS_REG(vm, CR_REG) = (CR_ENABLE_DEVICE | CR_TX_FIFO_RST);
 				ACCESS_REG(vm, CR_REG) = (CR_ENABLE_DEVICE);
-				printf("An error was detected....\n");
+				printf("An I2C write error was detected....\n");
+				switch(intStatus & (INT_TX_ERROR | INT_BNB | INT_ARB_LOST)) {
+					case INT_TX_ERROR:
+						printf("TX_ERROR\n");
+					case INT_BNB:
+						printf("BNB ERROR\n");
+					case INT_ARB_LOST:
+						printf("ARBITRATION LOST\n");
+				}
 				return;
 			}
 			
@@ -215,7 +223,7 @@ void I2C_Read(I2C vm, byte slaveADX, byte * rx_buffer, byte numBytes) {
 		if(numBytes == 1) {
 			intMask = (INT_ARB_LOST | INT_BNB);
 		} else {
-			intMask = (INT_ARB_LOST | INT_TX_ERROR);
+			intMask = (INT_ARB_LOST | INT_TX_ERROR | INT_BNB);
 		}
 
 		while(1) {
@@ -223,10 +231,20 @@ void I2C_Read(I2C vm, byte slaveADX, byte * rx_buffer, byte numBytes) {
 				/* Wait til there is something in the RX FIFO */
 				break;
 			}
-			if(ACCESS_REG(vm, IISR) & intMask) {
-				printf("An error has occurred on read\n\r");
-				return;
-			}
+
+			// if(ACCESS_REG(vm, IISR) & intMask) {
+			// 	printf("An error has occurred on read\n\r");
+			// 	switch(ACCESS_REG(vm, IISR) & intMask) {
+			// 		case INT_ARB_LOST:
+			// 			printf("ARBITRATION LOST\n");
+			// 		case INT_BNB:
+			// 			printf("BUS NOT BUSY ERROR\n");
+			// 		case INT_TX_ERROR:
+			// 			printf("TX ERROR\n");
+			// 	}
+
+			// 	return;
+			// }
 		}
 		/* Get the data from the fifo and place it in the buffer */
 		*rx_buffer++ = ACCESS_REG(vm, DRR_REG);
