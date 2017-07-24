@@ -99,7 +99,6 @@ typedef void * I2C;
 #define WITHOUT_STOP		0x00000000	/* To send without a stop bit at end of write */
 
 /**************************HELPFUL MACROS****************************/
-#define ACCESS_REG(BASE, OFFSET) (*(uint32_t *)(BASE + OFFSET))
 
 
 /**************************FUNC DEFITIONS****************************/

@@ -24,6 +24,8 @@
 #include <string.h>
 #include <unistd.h> /* for page size */
 
+#define ACCESS_REG(BASE, OFFSET) (*(uint32_t *)(BASE + OFFSET))
+
 #define PAGE_SIZE getpagesize()
 
 /* This is the main data structure used by uio-user.c */

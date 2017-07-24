@@ -13,6 +13,10 @@ SOURCES2= ad2test.c uio-user.c i2c-fpga-driver.c
 HEADERS2= uio-user.h i2c-fpga.h
 EXECUTABLE2= ad2test
 
+SOURCES3= oledrgbtest.c uio-user.c spi-fpga-driver.c gpio-fpga-driver.c
+HEADERS3 = uio-user.h gpio-fpga.h spi-fpga.h
+EXECUTABLE3= oledrgb
+
 $(EXECUTABLE): $(SOURCES) $(HEADERS)        
 	$(CC) -std=gnu99 -g -o $(EXECUTABLE) $(SOURCES)
 
@@ -21,6 +25,10 @@ $(EXECUTABLE1): $(SOURCES1) $(HEADERS1)
 
 $(EXECUTABLE2): $(SOURCES2) $(HEADERS2)
 	$(CC) -std=gnu99 -g -o $(EXECUTABLE2) $(SOURCES2)
+
+$(EXECUTABLE3): $(SOURCES3) $(HEADERS3)
+	$(CC) -std=gnu99 -g -o $(EXECUTABLE3) $(SOURCES3)
+
 .PHONY: clean
 
 clean:  
