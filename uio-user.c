@@ -78,19 +78,19 @@ UIO * UIO_MAP(uint8_t uioNum, uint8_t mapNum) {
 		fprintf(stderr, "ERROR CODE: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
-
-	UIO * indexPtr = uios;
-	while(indexPtr != NULL) {
-		if(indexPtr == uios[9]) {
+	
+	UIO * indexPtr;
+	for(int i = 0; i < 10; i++) {
+		indexPtr = uios[i];
+		if(indexPtr == NULL) {
+			uios[i] = uio;
+			return uio;
+		} else if (i == 9){
 			fprintf(stderr, "All UIO devices are currently in use\n");
 			fprintf(stderr, "Please disable a UIO device before attempting to use this one\n");
 			exit(EXIT_FAILURE);
-		} else {
-			indexPtr++;
 		}
 	}
-	*indexPtr = uio;
-	return uio;
 }
 
 
@@ -106,12 +106,13 @@ UIO * UIO_MAP(uint8_t uioNum, uint8_t mapNum) {
 ******************************************************************************/
 uint8_t UIO_UNMAP(void * blockToFree) {
 	UIO * arrayItem;
-	for(int i = 0; i < 10; i++) {
-		arrayItem = (uios + i);
-		if (arrayItem->mapPtr == blockToFree) {
+	for(int i = 0; i < 10; i++) {	
+		arrayItem = uios[i];
+		if ((arrayItem != NULL) && (arrayItem->mapPtr == blockToFree)) {
 			munmap(arrayItem->mapPtr, arrayItem->map_size);
 			close(arrayItem->uio_fd);
 			free(arrayItem);
+			fprintf(stderr, "UIO device unmapped successfully\n");
 			return 0;
 		}
 	}

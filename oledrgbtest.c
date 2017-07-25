@@ -45,40 +45,13 @@ int main() {
 
 	sendSingle(0xAE);
 	sendSingle(0xAF);
-	// while(1) {
-	// 	OLEDrgb_DrawRectangle(0, 0, 30, 30, 0xFFFF, 1, 0x7777);
-	// 	usleep(500000);
-	// }
-	uint8_t count = 0;
-	while(1) {
-		// for(int i = 0; i < OLEDRGB_WIDTH - 1; i += 16) {
-		// 	for(int j = 0; j < OLEDRGB_HEIGHT - 1; j += 16) {
-		// 		OLEDrgb_DrawRectangle(i, j, i + 8, j + 8, 0xFFFF, 1, j * 8000);
-		// 	}
-		// }
-		// sleep(1);
-		// byte packet[5] = {0x25, 0x00, 0x00, 95, 63};
-		// SPI_Transfer(spi, packet, NULL, 5);
-		// usleep(5000);
-		// for(int i = 0; i < OLEDRGB_WIDTH - 1; i += 16) {
-		// 	for(int j = 0; j < OLEDRGB_HEIGHT - 1; j += 16) {
-		// 		OLEDrgb_DrawRectangle(i, j, i + 8, j + 8, 0xFFFF, 1, j * 500);
-		// 	}
-		// }
-		// sleep(1);
-		for(int i = 0; i < OLEDRGB_WIDTH - 1; i += 16) {
-			for(int j = 0; j < OLEDRGB_HEIGHT - 1; j += 16) {
-				OLEDrgb_DrawRectangle(i, j, i + 8, j + 8, 0xFFFF, 1, 0x001F + i * 1000);
-			}
+	for(int i = 0; i < OLEDRGB_WIDTH - 1; i += 16) {
+		for(int j = 0; j < OLEDRGB_HEIGHT - 1; j += 16) {
+			OLEDrgb_DrawRectangle(i, j, i + 8, j + 8, 0xFFFF, 1, 0x001F + i * 1000);
 		}
-		// for(int i = 0; i < OLEDRGB_WIDTH - 1; i++) {
-		// 	OLEDrgb_DrawLine(i, 0, i, OLEDRGB_HEIGHT - 1, count + i + 750);
-		// }
-
-		// count = (count == OLEDRGB_HEIGHT - 1) ? count = 0 : count + 1;
-		usleep(100000);
-
 	}
+	SPI_Close(spi);
+	GPIO_Close(gpio);
 
 }
 

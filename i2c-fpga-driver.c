@@ -236,14 +236,14 @@ void I2C_Read(I2C vm, byte slaveADX, byte * rx_buffer, byte numBytes) {
 			}
 
 			if(ACCESS_REG(vm, IISR) & intMask) {
-				printf("An error has occurred on read\n\r");
+				fprintf(stderr, "An error has occurred on read\n\r");
 				switch(ACCESS_REG(vm, IISR) & intMask) {
 					case INT_ARB_LOST:
-						printf("ARBITRATION LOST\n");
+						fprintf(stderr, "ARBITRATION LOST\n");
 					case INT_BNB:
-						printf("BUS NOT BUSY ERROR\n");
+						fprintf(stderr, "BUS NOT BUSY ERROR\n");
 					case INT_TX_ERROR:
-						printf("TX ERROR\n");
+						fprintf(stderr, "TX ERROR\n");
 				}
 
 				return;
