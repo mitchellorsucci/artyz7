@@ -16,7 +16,27 @@
 #include "uio-user.h"
 #include "spi-fpga.h"
 
+/*****************************************************************************/
+/*!
+	Initialize the SPI hardware to use in Master mode with 8-bit transfer width
+	This SPI hardware should work with FIFO depth of 1, 16, or 256
 
+
+ @param	uioNum is the uio device number -- zero-indexed
+ @param	mapNum is the specific map partition inside the UIO device
+			if the UIO device contains only one partition, then the 
+			map number is 0
+
+ @return	a SPI (which is really a void * in disguise)
+		This points to the location in virtual memory that the SPI Hardware
+		has been mapped to, and is passed to all other functions in this driver
+		for control of the SPI hardware
+
+ @note 	The SPI hardware is configured with SPI Mode 0. To set another SPI mode
+ 		for the hardware, use SPI_setMode() to set the specific mode for 
+ 		CPOL and CPHA
+
+******************************************************************************/
 SPI SPI_init(uint8_t uioNum, uint8_t mapNum) {
 	if(uioNum < 0 || mapNum < 0) {
 		printf("That is not a valid UIO device or map number\n");
@@ -39,6 +59,28 @@ SPI SPI_init(uint8_t uioNum, uint8_t mapNum) {
  	return vm;
 }
 
+/*****************************************************************************/
+/*!
+	Sets the mode of data transfer for the SPI hardware by specifying the 
+	Polarity and phase of data transfers. See the specific documentation for your
+	SPI device to see which mode it needs for proper functionality
+
+
+ @param	SPI vm is SPI device to be worked on
+ @param	CPOL is the mode to set the SPI device to
+ 		if 0: CPOL is set to mode zero
+ 		if !0: CPOL is set to mode one
+ @param	CPHA is the mode to set the SPI device to
+ 		if 0: CPHA is set to mdoe zero
+ 		if !0: CPHA is set to mode one
+
+ @note There are only 4 valid SPI modes:
+ 	CPOL = 0, CPHA = 0  	mode 0
+ 	CPOL = 1, CPHA = 0		mode 1
+ 	CPOL = 0, CPHA = 1		mode 2
+ 	CPOL = 1, CPHA = 1		mode 3
+ 	Modes 0 and 3 are the most common
+******************************************************************************/
 void SPI_setMode(SPI vm, byte CPOL, byte CPHA) {
 	uint32_t config_reg = ACCESS_REG(vm, SPI_CR);
 
@@ -51,6 +93,26 @@ void SPI_setMode(SPI vm, byte CPOL, byte CPHA) {
 	ACCESS_REG(vm, SPI_CR) = config_reg;
 }
 
+/*****************************************************************************/
+/*!
+	Transfers numBytes of data from the tx_buffer to the slave device
+	and receives numBytes of data from the slave device into rx_buffer
+	If rx_buffer is NULL, the received data from the slave is disregarded
+
+
+ @param	SPI vm is SPI device to be worked on
+ @param	tx_buffer is a pointer to the location where the data to be transferred
+ 		is stored. The tx_buffer must be of data size byte, char, int8 or uint8
+ @param	rx_buffer is a pointer to the location where the data to be received will
+ 		be placed. Can be NULL if data to be received is arbitrary
+ @param numBytes is the number of bytes to be transferred or received, but
+ 		realistically is limited by the FIFO depth specified in the AXI QUAD SPI
+ 		setup. If Fifo depth is 16, then numBytes can not be larger than 16
+
+ @note rx_buffer can be NULL, but tx_buffer cannot be NULL. If one is looking to
+ 		receive data from a slave while needing to send arbitrary data, tx_buffer
+ 		can be padded with arbitrary data to send.
+******************************************************************************/
 void SPI_Transfer(SPI vm, byte * tx_buffer, byte * rx_buffer, byte numBytes) {
 	if(rx_buffer == NULL) {
 		byte dummy[numBytes];
@@ -85,6 +147,16 @@ void SPI_Transfer(SPI vm, byte * tx_buffer, byte * rx_buffer, byte numBytes) {
 
 }
 
+/*****************************************************************************/
+/*!
+	Closes and frees all memory associated with the SPI device
+
+
+ @param	SPI vm is SPI device to be worked on
+
+ @return returns 0 if Close was accomplished properly
+ 		returns -1 otherwise
+******************************************************************************/
 uint8_t SPI_Close(SPI vm) {
 	return UIO_UNMAP(vm);
 }
