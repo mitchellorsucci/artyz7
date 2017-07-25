@@ -22,10 +22,25 @@
 *	
 *
 ************************************************************************/ 
-
 #include "uio-user.h"
 
+static UIO * uios[10] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
+/*****************************************************************************/
+/*!
+	Initializes the UIO driver and brings the UIO hardware into virtual memory.
+
+
+ @param	uioNum is the uio device number -- zero-indexed
+ @param	mapNum is the specific map partition inside the UIO device
+			if the UIO device contains only one partition, then the 
+			map number is 0
+
+ @return	a pointer to a UIO struct, which contains the file descripter
+ 		of the UIO, the size to map, and a pointer to the location in virtual
+ 		memory where the UIO driver has been mapped
+
+******************************************************************************/
 UIO * UIO_MAP(uint8_t uioNum, uint8_t mapNum) {
 	UIO * uio = (UIO *) malloc(sizeof(UIO));
 	uio->uio_fd = 0;
@@ -56,7 +71,7 @@ UIO * UIO_MAP(uint8_t uioNum, uint8_t mapNum) {
 		exit(EXIT_FAILURE);
 	}
 
-	fprintf(stderr, "PAGE_SIZE * mapNum: 0x%x\n", PAGE_SIZE * mapNum);
+	fprintf(stderr, "OFFSET = PAGE_SIZE * mapNum: 0x%x\n", PAGE_SIZE * mapNum);
 	uio->mapPtr = mmap(0, uio->map_size, PROT_READ | PROT_WRITE, MAP_SHARED, uio->uio_fd, PAGE_SIZE * mapNum);
 	if (uio->mapPtr == -1) {
 		fprintf(stderr, "MMAP FAILED\n");
@@ -64,12 +79,41 @@ UIO * UIO_MAP(uint8_t uioNum, uint8_t mapNum) {
 		exit(EXIT_FAILURE);
 	}
 
+	UIO * indexPtr = uios;
+	while(indexPtr != NULL) {
+		if(indexPtr == uios[9]) {
+			fprintf(stderr, "All UIO devices are currently in use\n");
+			fprintf(stderr, "Please disable a UIO device before attempting to use this one\n");
+			exit(EXIT_FAILURE);
+		} else {
+			indexPtr++;
+		}
+	}
+	*indexPtr = uio;
 	return uio;
 }
 
-uint8_t UIO_UNMAP(UIO * uio) {
-	munmap(uio->mapPtr, uio->map_size);
-	close(uio->uio_fd);
-	free(uio);
-	return 1;
+
+/*****************************************************************************/
+/*!
+	Disables the UIO driver and frees the memory associated with it
+
+ @param	UIO * uio - a pointer to the UIO struct which represents the UIO device
+ 		to stop
+
+ @return	returns 1 to let the user know when the unmapping has finishes
+
+******************************************************************************/
+uint8_t UIO_UNMAP(void * blockToFree) {
+	UIO * arrayItem;
+	for(int i = 0; i < 10; i++) {
+		arrayItem = (uios + i);
+		if (arrayItem->mapPtr == blockToFree) {
+			munmap(arrayItem->mapPtr, arrayItem->map_size);
+			close(arrayItem->uio_fd);
+			free(arrayItem);
+			return 0;
+		}
+	}
+	return -1;
 }

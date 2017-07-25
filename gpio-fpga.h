@@ -58,4 +58,5 @@ int8_t digitalRead(GPIO vm, int8_t pinNum);
 int8_t setChannelValue(GPIO vm, uint32_t valMask, int8_t channel);
 uint32_t readChannelValue(GPIO vm, int8_t channel);
 int8_t setChannelDirection(GPIO vm, uint32_t dirMask, int8_t channel);
+uint8_t GPIO_Close(GPIO vm);
 #endif

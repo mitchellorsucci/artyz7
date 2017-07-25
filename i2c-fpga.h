@@ -106,5 +106,6 @@ I2C I2C_init(uint8_t uioNum, uint8_t mapNum);
 void I2C_WriteWithStop(I2C vm, byte slaveADX, byte * tx_buffer, byte numBytes);
 void I2C_WriteWithoutStop(I2C vm, byte slaveADX, byte * tx_buffer, byte numBytes);
 void I2C_Read(I2C vm, byte slaveADX, byte * rx_buffer, byte numBytes);
+uint8_t I2C_Close(I2C vm);
 
 #endif

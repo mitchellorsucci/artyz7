@@ -36,6 +36,6 @@ typedef struct UIO {
 } UIO;
 
 UIO * UIO_MAP(uint8_t uioNum, uint8_t mapNum);
-uint8_t UIO_UNMAP(UIO * uio);
+uint8_t UIO_UNMAP(void * blockToFree);
 
 #endif //UIO_USER_H

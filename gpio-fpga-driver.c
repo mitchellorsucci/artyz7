@@ -113,3 +113,7 @@ int8_t setChannelDirection(GPIO vm, uint32_t dirMask, int8_t channel) {
 	ACCESS_REG(vm, CHANNEL_1_DIRECTION + ((channel - 1) * 8)) = dirMask;
 	return 0;
 }
+
+uint8_t GPIO_Close(GPIO vm) {
+	return UIO_UNMAP(vm);
+}

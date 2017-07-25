@@ -16,6 +16,7 @@
 #include "uio-user.h"
 #include "spi-fpga.h"
 
+
 SPI SPI_init(uint8_t uioNum, uint8_t mapNum) {
 	if(uioNum < 0 || mapNum < 0) {
 		printf("That is not a valid UIO device or map number\n");
@@ -82,4 +83,8 @@ void SPI_Transfer(SPI vm, byte * tx_buffer, byte * rx_buffer, byte numBytes) {
 		rx_byteCount--;
 	}
 
+}
+
+uint8_t SPI_Close(SPI vm) {
+	return UIO_UNMAP(vm);
 }

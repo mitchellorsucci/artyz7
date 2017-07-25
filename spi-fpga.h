@@ -94,4 +94,5 @@ typedef void * SPI;
 SPI SPI_init(uint8_t uioNum, uint8_t mapNum);
 void SPI_setMode(SPI vm, byte CPOL, byte CPHA);
 void SPI_Transfer(SPI vm, byte * tx_buffer, byte * rx_buffer, byte numBytes);
+uint8_t SPI_Close(SPI vm);
 #endif

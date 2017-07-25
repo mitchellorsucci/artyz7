@@ -20,7 +20,6 @@
 /*************************STATIC FUNCTION DECLARATION*******************/
 static void I2C_Write(I2C vm, byte slaveADX, byte * tx_buffer, byte numBytes, uint8_t option);
 
-
 /*****************************************************************************/
 /*!
 	Initialize the I2C hardware to use in Dynamic mode
@@ -35,16 +34,20 @@ static void I2C_Write(I2C vm, byte slaveADX, byte * tx_buffer, byte numBytes, ui
 		This points to the location in virtual memory that the I2C Hardware
 		has been mapped to
 
+ @note		This library only allows for the use of five different AXI IIC
+ 		components. This limitation was picked to assist with software organization
+ 		and because most likely no one will need more than three I2C busses.
+
 ******************************************************************************/
 I2C I2C_init(uint8_t uioNum, uint8_t mapNum) {
 	if(uioNum < 0 || mapNum < 0) {
-		printf("That is not a valid UIO device or map number\n");
-		printf("Check /sys/class/uio for more information about"); 
-		printf(" the available UIO devices\n");
+		fprintf(stderr, "That is not a valid UIO device or map number\n");
+		fprintf(stderr, "Check /sys/class/uio for more information about"); 
+		fprintf(stderr, " the available UIO devices\n");
 		exit(EXIT_FAILURE);
 	}
 	void * vm;
-	UIO * uio = UIO_MAP(uioNum, mapNum);
+	uio = UIO_MAP(uioNum, mapNum);
 	vm = uio->mapPtr;
 	ACCESS_REG(vm, RESETR) = SW_RST; /* Reset the hardware */
 	ACCESS_REG(vm, RFD_REG) = (RX_FIFO_DEPTH - 1);	/* Set the FIFO depth */
@@ -53,7 +56,7 @@ I2C I2C_init(uint8_t uioNum, uint8_t mapNum) {
 	ACCESS_REG(vm, CR_REG) = (CR_ENABLE_DEVICE);
 	uint32_t status = ACCESS_REG(vm, SR_REG);
 	if(status != (SR_RX_EMPTY | SR_TX_EMPTY)) {
-		printf("FAILED TO CONFIGURE DEVICE PROPERLY\n");
+		fprintf(stderr, "FAILED TO CONFIGURE DEVICE PROPERLY\n");
 	}
 	return vm;
 }
@@ -232,19 +235,19 @@ void I2C_Read(I2C vm, byte slaveADX, byte * rx_buffer, byte numBytes) {
 				break;
 			}
 
-			// if(ACCESS_REG(vm, IISR) & intMask) {
-			// 	printf("An error has occurred on read\n\r");
-			// 	switch(ACCESS_REG(vm, IISR) & intMask) {
-			// 		case INT_ARB_LOST:
-			// 			printf("ARBITRATION LOST\n");
-			// 		case INT_BNB:
-			// 			printf("BUS NOT BUSY ERROR\n");
-			// 		case INT_TX_ERROR:
-			// 			printf("TX ERROR\n");
-			// 	}
+			if(ACCESS_REG(vm, IISR) & intMask) {
+				printf("An error has occurred on read\n\r");
+				switch(ACCESS_REG(vm, IISR) & intMask) {
+					case INT_ARB_LOST:
+						printf("ARBITRATION LOST\n");
+					case INT_BNB:
+						printf("BUS NOT BUSY ERROR\n");
+					case INT_TX_ERROR:
+						printf("TX ERROR\n");
+				}
 
-			// 	return;
-			// }
+				return;
+			}
 		}
 		/* Get the data from the fifo and place it in the buffer */
 		*rx_buffer++ = ACCESS_REG(vm, DRR_REG);
@@ -252,4 +255,17 @@ void I2C_Read(I2C vm, byte slaveADX, byte * rx_buffer, byte numBytes) {
 	}
 }
 
+/*****************************************************************************/
+/*!
+	Unmaps the I2C hardware from virtual memory and frees all items associated
+	with the UIO device
+
+
+ 	@param	vm is a pointer to the location in virtual memory where the I2C
+			hardware has been mapped to
+
+******************************************************************************/
+uint8_t I2C_Close(I2C vm) {
+	return UIO_UNMAP(vm);
+}
 
