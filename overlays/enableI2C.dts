@@ -1,0 +1,16 @@
+/dts-v1/;
+
+/plugin/;
+
+/ {
+	compatible = "digilent,zynq-artyz7", "xlnx,zynq-7000";
+	part-number = "Arty Physical I/O";
+	version = "1.0";
+	fragment@0 {
+		target-path = "/amba/i2c@e0004000";
+		__overlay__{
+			status = "okay";
+	
+		};
+	};
+};
