@@ -47,7 +47,7 @@ I2C I2C_init(uint8_t uioNum, uint8_t mapNum) {
 		exit(EXIT_FAILURE);
 	}
 	void * vm;
-	uio = UIO_MAP(uioNum, mapNum);
+	UIO * uio = UIO_MAP(uioNum, mapNum);
 	vm = uio->mapPtr;
 	ACCESS_REG(vm, RESETR) = SW_RST; /* Reset the hardware */
 	ACCESS_REG(vm, RFD_REG) = (RX_FIFO_DEPTH - 1);	/* Set the FIFO depth */

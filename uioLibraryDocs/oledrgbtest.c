@@ -26,6 +26,7 @@ uint8_t OLEDrgb_ExtractGFromRGB(uint16_t wRGB);
 uint8_t OLEDrgb_ExtractBFromRGB(uint16_t wRGB);
 void OLEDrgb_DrawLine(uint8_t c1, uint8_t r1, uint8_t c2, uint8_t r2, uint16_t lineColor);
 
+GPIO led;
 GPIO gpio;
 SPI spi;
 
@@ -33,10 +34,12 @@ int main() {
 	gpio = GPIO_init(1, 0);
 	spi = SPI_init(1, 1);
 	SPI_setMode(spi, 1, 1);
+	led = GPIO_init(0, 0);
 	setPinMode(gpio, DATCOM, OUTPUT);
 	setPinMode(gpio, RES, OUTPUT);
 	setPinMode(gpio, VCCEN, OUTPUT);
 	setPinMode(gpio, PMODEN, OUTPUT);
+	setChannelDirection(led, 0, 1); 
 	oledInit();
 	byte packet[5] = {0x25, 0x00, 0x00, 95, 63};
 	SPI_Transfer(spi, packet, NULL, 5);
@@ -52,6 +55,13 @@ int main() {
 	}
 	SPI_Close(spi);
 	GPIO_Close(gpio);
+	for(int i = 0; i < 20; i++) {
+		for(int j = 0; j < 8; j++) {
+			setChannelValue(led, 1 << j, 1);
+			usleep(100000);	
+		}
+	}
+	GPIO_Close(led);
 
 }
 

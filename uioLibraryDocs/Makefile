@@ -5,8 +5,8 @@ SOURCES= uiotest.c uio-user.c
 HEADERS= uio-user.h
 EXECUTABLE= uiotest	
 
-SOURCES1=ioxptest.c uio-user.c i2c-fpga-driver.c
-HEADERS1= uio-user.h i2c-fpga.h
+SOURCES1=ioxptest.c uio-user.c i2c-fpga-driver.c gpio-fpga-driver.c
+HEADERS1= uio-user.h i2c-fpga.h gpio-fpga.h
 EXECUTABLE1= ioxptest
 
 SOURCES2= ad2test.c uio-user.c i2c-fpga-driver.c

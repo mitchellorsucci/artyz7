@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "i2c-fpga.h"
 #include <unistd.h>
+#include "gpio-fpga.h"
 
 byte IOXP = 0x34;
 #define GPO_DATA_OUT_A	0x2A
@@ -13,6 +14,8 @@ byte readRegister(I2C vm, byte slaveADX, byte reg);
 
 int main(){
 	I2C base = I2C_init(1, 1);
+	GPIO ld4 = GPIO_init(0, 0);
+	setChannelDirection(ld4, 0, 1);
 
 	byte setup_0[3] = {GPO_OUT_MODE_A, 0xFF, 0xFF};
 	byte setup_1[3] = {GPIO_DIRECTION_A, 0xFF, 0xFF};
@@ -26,7 +29,7 @@ int main(){
 	I2C_WriteWithStop(base, IOXP, init, 3);
 	byte temp = 0;
 
-	while(1) {
+	for(int j = 0; j < 20; j++) {
 		for(int i = 0; i < 8; i++) {
 			value_on[2] = 128 >> i;
 			value_on[1] = 1 << i;
@@ -47,9 +50,11 @@ int main(){
 			// I2C_WriteWithStop(base, I2C_ADX, value_off, 3);
 			// usleep(200000);
 		}
-
+		setChannelValue(ld4, j, 1);
 
 	}
+	I2C_Close(base);
+	GPIO_Close(ld4);
 }
 
 void writeRegister(I2C vm, byte slaveADX, byte reg, byte data) {
