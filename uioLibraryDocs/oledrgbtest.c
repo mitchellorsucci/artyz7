@@ -56,8 +56,8 @@ int main() {
 	SPI_Close(spi);
 	GPIO_Close(gpio);
 	for(int i = 0; i < 20; i++) {
-		for(int j = 0; j < 8; j++) {
-			setChannelValue(led, 1 << j, 1);
+		for(int j = 0; j < 9; j++) {
+			setChannelValue(led, 3 << j, 1);
 			usleep(100000);	
 		}
 	}

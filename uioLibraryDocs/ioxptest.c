@@ -29,7 +29,8 @@ int main(){
 	I2C_WriteWithStop(base, IOXP, init, 3);
 	byte temp = 0;
 
-	for(int j = 0; j < 20; j++) {
+	for(int j = 0; j < 16; j++) {
+		setChannelValue(ld4, j, 1);
 		for(int i = 0; i < 8; i++) {
 			value_on[2] = 128 >> i;
 			value_on[1] = 1 << i;
@@ -50,8 +51,6 @@ int main(){
 			// I2C_WriteWithStop(base, I2C_ADX, value_off, 3);
 			// usleep(200000);
 		}
-		setChannelValue(ld4, j, 1);
-
 	}
 	I2C_Close(base);
 	GPIO_Close(ld4);
