@@ -11,16 +11,56 @@ echo
 
 
 start() {
+	# Check to see if the Overlay and bit files are present in /lib/firmware
+	if [ -e /lib/firmware/$DTBO ]; then
+		echo -e "\tFound the .dtbo file"
+	else
+		echo "The specified .dtbo file is not present in /lib/firmware"
+		exit 1
+	fi
+
+	if [ -e /lib/firmware/$BIN ]; then
+		echo -e "\tFound the FPGA bitstream file"
+	else
+		echo "The specified bitstream file is not present in /lib/firmware"
+		exit 1
+	fi
+
 	echo -e "\t**********************************************"
 	echo -e "\t          Loading Overlay $DTBO               "
 	echo -e "\t**********************************************"
-	mkdir /config
-	mount -t configfs configfs /config
-	mkdir /config/device-tree/overlays/$DTBO
+	
+	# Set Up For Configfs
+	if [ -e /config ]; then 
+		echo -e "\t/config already exists"
+	else
+		mkdir /config
+	fi
+		
+	# Check to see if configfs has already been mounted at /config
+	if [ -e /config/device-tree ]; then
+		echo -e "\tconfigfs has already been mounted"
+	else
+		mount -t configfs configfs /config
+	fi
+
+	# Check to see if the overlay has already been loaded
+	if [ -e /config/device-tree/overlays/$DTBO ]; then
+		echo "This overlay has already been loaded"
+		echo "Or it was not unloaded properly"
+		echo "Please unload it using the Stop function before proceeding"
+		exit 1
+	else
+		mkdir /config/device-tree/overlays/$DTBO
+	fi
+
+
 	echo $DTBO > /config/device-tree/overlays/$DTBO/path
-	cat /lib/firmware/$BIN > /dev/xdevcfg
-	echo
 	echo -e "\tOverlay Loaded"
+	
+	cat /lib/firmware/$BIN > /dev/xdevcfg
+	echo -e "\tBitstream Loaded"
+	echo
 	
 }
 
@@ -28,10 +68,17 @@ stop() {
 	echo -e "\t**********************************************"
 	echo -e "\t          Unloading Overlay $DTBO             "
 	echo -e "\t**********************************************"
-	rmdir /config/device-tree/overlays/$DTBO
+	
+	if [ -e /config/device-tree/overlays/$DTBO ]; then
+		rmdir /config/device-tree/overlays/$DTBO
+	else
+		echo "The specified overlay has already been unloaded"
+		echo "Or was never loaded in the first place"
+		exit 1
+	fi
 	echo
 	echo -e "\tOverlay unloaded"
-	
+	echo	
 }
 
 case "$1" in
