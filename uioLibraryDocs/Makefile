@@ -17,6 +17,10 @@ SOURCES3= oledrgbtest.c uio-user.c spi-fpga-driver.c gpio-fpga-driver.c
 HEADERS3 = uio-user.h gpio-fpga.h spi-fpga.h
 EXECUTABLE3= oledrgb
 
+SOURCES4= pwmtest.c uio-user.c pwm-fpga-driver.c
+HEADERS4= uio-user.h pwm-fpga.h
+EXEC4= pwmtest
+
 $(EXECUTABLE): $(SOURCES) $(HEADERS)        
 	$(CC) -std=gnu99 -g -o $(EXECUTABLE) $(SOURCES)
 
@@ -28,6 +32,9 @@ $(EXECUTABLE2): $(SOURCES2) $(HEADERS2)
 
 $(EXECUTABLE3): $(SOURCES3) $(HEADERS3)
 	$(CC) -std=gnu99 -g -o $(EXECUTABLE3) $(SOURCES3)
+
+$(EXEC4): $(SOURCES4) $(HEADERS4)
+	$(CC) -std=gnu99 -g -o $(EXEC4) $(SOURCES4)
 
 .PHONY: clean
 
