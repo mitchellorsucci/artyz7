@@ -1,0 +1,99 @@
+/dts-v1/;
+/plugin/;
+
+/{
+	compatible = "digilent,zynq-artyz7", "xlnx,zynq-7000";
+	part-number = "Arty Z7 I2C and SPI";
+	version = "1.0";
+
+	fragment@0 {
+		target-path = "/";
+		#address-cells = <0x00000001>;                                                                          
+        #size-cells = <0x00000001>; 
+		__overlay__{	
+			#address-cells = <1>;
+			#size-cells = <1>;
+			aliases {	
+				spi2 = "/axi_quad_spi@41e10000";
+				spi1 = "/axi_quad_spi@41e00000";
+			};
+		};	
+	};
+
+
+	fragment@1 {
+		target-path = "/";
+		#address-cells = <0x00000001>;                                                                          
+        #size-cells = <0x00000001>; 
+		__overlay__{
+			#address-cells = <1>;
+			#size-cells = <1>;
+			I2C_JB: i2c@41610000 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clock-names = "ref_clk";
+				clocks = <0x01 0x15>;
+				compatible = "xlnx,xps-iic-2.00.a";
+				interrupt-parent = <0x4>;
+				interrupts = <0 32 4>;
+				reg = <0x41610000 0x10000>;
+			};
+			I2C_Shield: i2c@41600000 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clock-names = "ref_clk";
+				clocks = <0x01 0x15>;
+				compatible = "xlnx,xps-iic-2.00.a";
+				interrupt-parent = <0x4>;
+				interrupts = <0 29 4>;
+				reg = <0x41600000 0x10000>;
+			};
+			SPI_JA: axi_quad_spi@41e10000 {
+				bits-per-word = <8>;
+				compatible = "xlnx,xps-spi-2.00.a";
+				fifo-size = <16>;
+				interrupt-parent = <0x4>;
+				interrupts = <0 31 1>;
+				num-cs = <0x1>;
+				reg = <0x41e10000 0x10000>;
+				xlnx,num-ss-bits = <0x1>;
+				xlnx,spi-mode = <0>;
+				#address-cells = <0x00000001>;
+                #size-cells = <0x00000000>;
+                spidev0: spidev@0 {
+					#address-cells = <0x00000001>;
+        			#size-cells = <0x00000000>;
+					compatible = "linux,spidev";
+					reg = <0x0>;
+					spi-max-frequency = <10000000>;
+				};
+			};
+			SPI_Shield: axi_quad_spi@41e00000 {
+				bits-per-word = <8>;
+				compatible = "xlnx,xps-spi-2.00.a";
+				fifo-size = <16>;
+				interrupt-parent = <0x4>;
+				interrupts = <0 30 1>;
+				num-cs = <0x1>;
+				reg = <0x41e00000 0x10000>;
+				xlnx,num-ss-bits = <0x1>;
+				xlnx,spi-mode = <0>;
+				#address-cells = <0x00000001>;
+   				#size-cells = <0x00000000>;
+				spidev1: spidev@0 {
+					#address-cells = <0x00000001>;
+        			#size-cells = <0x00000000>;
+					compatible = "linux,spidev";
+					reg = <0x0>;
+					spi-max-frequency = <10000000>;
+				};
+			};
+			PWM_0: PWM@43c00000 {
+				compatible = "generic-uio";
+				reg = <0x43c00000 0x10000>;
+				xlnx,pwm-axi-addr-width = <0x7>;
+				xlnx,pwm-axi-data-width = <0x20>;
+			};
+		};
+	};
+};
