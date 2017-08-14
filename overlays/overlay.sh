@@ -57,7 +57,7 @@ start() {
 
 	echo $DTBO > /config/device-tree/overlays/$DTBO/path
 	echo -e "\tOverlay Loaded"
-	
+	sleep 2	
 	cat /lib/firmware/$BIN > /dev/xdevcfg
 	echo -e "\tBitstream Loaded"
 	echo
