@@ -1,0 +1,34 @@
+/dts-v1/;
+/plugin/;
+
+/{
+	compatible = "digilent,zynq-artyz7", "xlnx,zynq-7000";
+	part-number = "Arty Z7 I2C and SPI";
+	version = "1.0";
+	
+	fragment@0 {
+		target-path = "/axi_quad_spi@41e10000"; 
+		__overlay__{	
+            spidev0: spidev@0 {
+				#address-cells = <0x00000001>;
+        		#size-cells = <0x00000000>;
+				compatible = "linux,spidev";
+				reg = <0x0>;
+				spi-max-frequency = <10000000>;
+			};
+		};	
+	};
+
+	fragment@1 {
+		target-path = "/axi_quad_spi@41e00000";
+		__overlay__{	
+			spidev1: spidev@0 {
+					#address-cells = <0x00000001>;
+        			#size-cells = <0x00000000>;
+					compatible = "linux,spidev";
+					reg = <0x0>;
+					spi-max-frequency = <100000>;
+				};		
+		};	
+	};
+};

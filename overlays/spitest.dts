@@ -3,36 +3,40 @@
 
 /{
 	fragment@0 {
-		target-path = "/amba_pl/axi_quad_spi@41e00000";
+		target-path = "/";
 		#address-cells = <0x00000001>;                                                                          
         #size-cells = <0x00000001>; 
 		__overlay__{
 			#address-cells = <0x00000001>;                                                                          
-        	#size-cells = <0x00000000>; 
-        	num-cs = <0x4>;
-/*			spidev@0 {
-				compatible = "linux,spidev";
-				reg = <0x0>;
-				spi-max-frequency = <6250000>;
-			};*/
+        	#size-cells = <0x00000001>; 
+			SPI_JA: axi_quad_spi@41e10000 {
+				bits-per-word = <8>;
+				compatible = "xlnx,xps-spi-2.00.a";
+				fifo-size = <16>;
+				interrupt-parent = <0x4>;
+				interrupts = <0 31 1>;
+				num-cs = <0x1>;
+				reg = <0x41e10000 0x10000>;
+				xlnx,num-ss-bits = <0x1>;
+				xlnx,spi-mode = <0>;
+				is-dual = <0>;
+				#address-cells = <0x00000001>;
+                #size-cells = <0x00000000>;
+                //clock-names = "axi_clk", "axi4_clk", "spi_clk";
+   				//clocks = <0x01 0xF>, <0x01 0xF>, <0x01 0xF>;
+                /*spidev0: spidev@0 {
+					#address-cells = <0x00000001>;
+        			#size-cells = <0x00000000>;
+					compatible = "linux,spidev";
+					reg = <0x0>;
+					spi-max-frequency = <10000000>;
+				};*/
+			};
 
 		};
 	};
 
 	fragment@1 {
-		target-path = "/amba_pl/axi_quad_spi@41e00000";
-		#address-cells = <0x00000001>;                                                                          
-        #size-cells = <0x00000001>; 
-		__overlay__{ 
-			spidev@1{
-				compatible = "linux,spidev";
-				reg = <0x1>;
-				spi-max-frequency = <6250000>;
-			};
-
-		};
-	};
-	/*fragment@1 {
 		target-path = "/amba/spi@e0007000";
 		#address-cells = <0x00000001>;                                                                          
         #size-cells = <0x00000001>;
@@ -48,5 +52,5 @@
 			};
 
 		};
-	};*/
+	};
 };

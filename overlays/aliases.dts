@@ -1,0 +1,16 @@
+/dts-v1/;
+/plugin/;
+
+/{
+	compatible = "digilent,zynq-artyz7", "xlnx,zynq-7000";
+	part-number = "Arty Z7 I2C and SPI";
+	version = "1.0";
+	
+	fragment@0 {
+		target-path = "/aliases"; 
+		__overlay__{	
+			spi3 = "/axi_quad_spi@41e10000";
+			spi4 = "/axi_quad_spi@41e00000";
+		};	
+	};
+};

@@ -11,23 +11,11 @@
 		#address-cells = <0x00000001>;                                                                          
         #size-cells = <0x00000001>; 
 		__overlay__{	
+			/*amba_pl: amba_pl {
 			#address-cells = <1>;
 			#size-cells = <1>;
-			aliases {	
-				spi2 = "/axi_quad_spi@41e10000";
-				spi1 = "/axi_quad_spi@41e00000";
-			};
-		};	
-	};
-
-
-	fragment@1 {
-		target-path = "/";
-		#address-cells = <0x00000001>;                                                                          
-        #size-cells = <0x00000001>; 
-		__overlay__{
-			#address-cells = <1>;
-			#size-cells = <1>;
+			compatible = "simple-bus";
+			ranges;*/
 			I2C_JB: i2c@41610000 {
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -58,15 +46,18 @@
 				reg = <0x41e10000 0x10000>;
 				xlnx,num-ss-bits = <0x1>;
 				xlnx,spi-mode = <0>;
+				is-dual = <0>;
 				#address-cells = <0x00000001>;
                 #size-cells = <0x00000000>;
-                spidev0: spidev@0 {
+                //clock-names = "axi_clk", "axi4_clk", "spi_clk";
+   				//clocks = <0x01 0xF>, <0x01 0xF>, <0x01 0xF>;
+                /*spidev0: spidev@0 {
 					#address-cells = <0x00000001>;
         			#size-cells = <0x00000000>;
 					compatible = "linux,spidev";
 					reg = <0x0>;
 					spi-max-frequency = <10000000>;
-				};
+				};*/
 			};
 			SPI_Shield: axi_quad_spi@41e00000 {
 				bits-per-word = <8>;
@@ -78,22 +69,135 @@
 				reg = <0x41e00000 0x10000>;
 				xlnx,num-ss-bits = <0x1>;
 				xlnx,spi-mode = <0>;
+				is-dual = <0>;
 				#address-cells = <0x00000001>;
    				#size-cells = <0x00000000>;
-				spidev1: spidev@0 {
+   				//clock-names = "axi_clk", "axi4_clk", "spi_clk";
+   				//clocks = <0x01 0xF>, <0x01 0xF>, <0x01 0xF>;
+				/*spidev1: spidev@0 {
 					#address-cells = <0x00000001>;
         			#size-cells = <0x00000000>;
 					compatible = "linux,spidev";
 					reg = <0x0>;
-					spi-max-frequency = <10000000>;
-				};
+					spi-max-frequency = <100000>;
+				};*/
 			};
 			PWM_0: PWM@43c00000 {
 				compatible = "generic-uio";
 				reg = <0x43c00000 0x10000>;
 				xlnx,pwm-axi-addr-width = <0x7>;
 				xlnx,pwm-axi-data-width = <0x20>;
+				device-type = "PWM";
+			};
+			UART_JA: serial@42c10000 {
+				clock-names = "ref_clk";
+				clocks = <0x01 0>;
+				compatible = "xlnx,xps-uartlite-1.00.a";
+				current-speed = <115200>;
+				device_type = "serial";
+				interrupt-parent = <0x4>;
+				interrupts = <0 33 1>;
+				port-number = <1>;
+				reg = <0x42c10000 0x10000>;
+				xlnx,baudrate = <0x2580>;
+				xlnx,data-bits = <0x8>;
+				xlnx,odd-parity = <0x0>;
+				xlnx,s-axi-aclk-freq-hz-d = "100.0";
+				xlnx,use-parity = <0x0>;
+			};
+			UART_JB: serial@42c20000 {
+				clock-names = "ref_clk";
+				clocks = <0x01 0>;
+				compatible = "xlnx,xps-uartlite-1.00.a";
+				current-speed = <115200>;
+				device_type = "serial";
+				interrupt-parent = <0x04>;
+				interrupts = <0 34 1>;
+				port-number = <2>;
+				reg = <0x42c20000 0x10000>;
+				xlnx,baudrate = <0x2580>;
+				xlnx,data-bits = <0x8>;
+				xlnx,odd-parity = <0x0>;
+				xlnx,s-axi-aclk-freq-hz-d = "100.0";
+				xlnx,use-parity = <0x0>;
+			};
+			UART_io: serial@42c00000 {
+				clock-names = "ref_clk";
+				clocks = <0x01 0>;
+				compatible = "xlnx,xps-uartlite-1.00.a";
+				current-speed = <115200>;
+				device_type = "serial";
+				interrupt-parent = <0x04>;
+				interrupts = <0 35 1>;
+				port-number = <3>;
+				reg = <0x42c00000 0x10000>;
+				xlnx,baudrate = <0x1c200>;
+				xlnx,data-bits = <0x8>;
+				xlnx,odd-parity = <0x0>;
+				xlnx,s-axi-aclk-freq-hz-d = "100.0";
+				xlnx,use-parity = <0x0>;
+			};
+			UART_io_2: serial@42c30000 {
+				clock-names = "ref_clk";
+				clocks = <0x01 0>;
+				compatible = "xlnx,xps-uartlite-1.00.a";
+				current-speed = <115200>;
+				device_type = "serial";
+				interrupt-parent = <0x04>;
+				interrupts = <0 36 1>;
+				port-number = <4>;
+				reg = <0x42c30000 0x10000>;
+				xlnx,baudrate = <0x2580>;
+				xlnx,data-bits = <0x8>;
+				xlnx,odd-parity = <0x0>;
+				xlnx,s-axi-aclk-freq-hz-d = "100.0";
+				xlnx,use-parity = <0x0>;
+			};
+			uart16550_io: serial@43c10000 {
+				clock-frequency = <100000000>;
+				clock-names = "ref_clk";
+				clocks = <0x01 0>;
+				compatible = "xlnx,xps-uart16550-2.00.a", "ns16550a";
+				current-speed = <115200>;
+				device_type = "serial";
+				interrupt-parent = <0x04>;
+				interrupts = <0 52 4>;
+				port-number = <6>;
+				reg = <0x43c10000 0x10000>;
+				reg-offset = <0x1000>;
+				reg-shift = <2>;
+				xlnx,external-xin-clk-hz = <0x17d7840>;
+				xlnx,external-xin-clk-hz-d = <0x19>;
+				xlnx,has-external-rclk = <0x0>;
+				xlnx,has-external-xin = <0x0>;
+				xlnx,is-a-16550 = <0x1>;
+				xlnx,s-axi-aclk-freq-hz-d = "100.0";
+				xlnx,use-modem-ports = <0x0>;
+				xlnx,use-user-ports = <0x0>;
+			};
+			uart16550_jb: serial@43c20000 {
+				clock-frequency = <100000000>;
+				clock-names = "ref_clk";
+				clocks = <0x01 0>;
+				compatible = "xlnx,xps-uart16550-2.00.a", "ns16550a";
+				current-speed = <115200>;
+				device_type = "serial";
+				interrupt-parent = <0x04>;
+				interrupts = <0 53 4>;
+				port-number = <7>;
+				reg = <0x43c20000 0x10000>;
+				reg-offset = <0x1000>;
+				reg-shift = <2>;
+				xlnx,external-xin-clk-hz = <0x17d7840>;
+				xlnx,external-xin-clk-hz-d = <0x19>;
+				xlnx,has-external-rclk = <0x0>;
+				xlnx,has-external-xin = <0x0>;
+				xlnx,is-a-16550 = <0x1>;
+				xlnx,s-axi-aclk-freq-hz-d = "100.0";
+				xlnx,use-modem-ports = <0x0>;
+				xlnx,use-user-ports = <0x0>;
 			};
 		};
 	};
+//};
 };
