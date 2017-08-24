@@ -3,8 +3,8 @@
 SPIdata * spiDevices[MAX_DEVICE_NUM_COMM];    
 I2Cdata * i2cDevices[MAX_DEVICE_NUM_COMM];
 UARTdata * uartDevices[MAX_DEVICE_NUM_COMM];
-//PWMdata * pwmDevices[MAX_DEVICE_NUM_IO];
-//GPIOdata * gpioDevices[MAX_DEVICE_NUM_IO];
+PWM pwmDevice = NULL;
+GPIO gpioDevice = NULL;
 
 int ArtyInit() {
     for(int i = 0; i < MAX_DEVICE_NUM_COMM; i++) {
@@ -12,11 +12,133 @@ int ArtyInit() {
         i2cDevices[i] = NULL;
         uartDevices[i] = NULL;
     }
-    /*for(int i = 0; i < MAX_DEVICE_NUM_IO; i++) {
-        pwmDevices[i] = NULL;
-        gpioDevices[i] = NULL;
-    }*/
+
+    int gpioNum = -1;
+    int pwmNum = -1;
+    for(int i = 0; i < 2; i++) {
+        char buf[50];
+        char c[4];
+        sprintf(buf, "%s%s%d%s", UIO_BASE, "uio", i, "/name");
+        FILE * uios;
+        uios = fopen(buf, "r");
+        if((NULL == uios) && (i == 0)) {
+            perror("");
+            fprintf(stderr, "There are no PWM or GPIO devices\n");
+            pwmDevice = NULL;
+            gpioDevice = NULL;
+            break;
+        } else if (NULL == uios) {
+            break; 
+        }else {
+            fgets(c, 4, uios);
+            int test = strcmp(c, "PWM");
+            if(test == 0) {
+                pwmNum = i;
+            } else {
+                gpioNum = i;
+            }
+        }
+    }
+    if(pwmNum > -1) {
+        pwmDevice = PWM_init(pwmNum, 0);
+        fprintf(stderr, "PWM Device mapped as uio%d\n", pwmNum); 
+    }
+    if(gpioNum > -1) {
+        gpioDevice = GPIO_init(gpioNum, 0);
+        fprintf(stderr, "GPIO Device mapped as uio%d\n", gpioNum);
+    }
+    return 0;
 }
+
+int ArtyDeInit() {
+    if(NULL != pwmDevice) {
+        PWM_Close(pwmDevice);
+        pwmDevice = NULL;
+    }
+    if(NULL != gpioDevice) {
+        GPIO_Close(gpioDevice);
+        gpioDevice = NULL;
+    }
+
+    return 0;
+}
+
+int ArtySetPinMode(uint8_t channel, uint8_t pin, uint8_t mode) {
+    if(NULL == gpioDevice) {
+        fprintf(stderr, "There is no GPIO device\n");
+        return 1;
+    } else {
+        setPinMode(gpioDevice, channel + 1, pin + 1, mode);
+    }
+
+    return 0;
+}
+
+int ArtyDigitalWrite(uint8_t channel, uint8_t pin, uint8_t value) {
+    if(NULL == gpioDevice) {
+        fprintf(stderr, "There is no GPIO device\n");
+        return 1;
+    } else {
+        digitalWrite(gpioDevice, channel + 1, pin + 1, value);
+    }
+
+    return 0;
+}
+
+int ArtyDigitalRead(uint8_t channel, uint8_t pin) {
+    if(NULL == gpioDevice) {
+        fprintf(stderr, "There is no GPIO device\n");
+        return 1;
+    } 
+
+    return digitalRead(gpioDevice, channel + 1, pin + 1);
+}
+
+int ArtyPWMenable() {
+    if(NULL == pwmDevice) {
+        fprintf(stderr, "There is no PWM device to enable\n");
+        return 1;
+    } else {
+        PWM_Enable(pwmDevice);
+    }
+    
+    return 0;
+}
+
+int ArtyPWMdisable() {
+    if(NULL == pwmDevice) {
+        fprintf(stderr, "There is no PWM device to disable\n");
+        return 1;
+    } else {
+        PWM_Disable(pwmDevice);
+    }
+
+    return 0;
+}
+
+// Sets Frequency for all PWM channels
+int ArtyPWMSetFrequency(unsigned long nano) {
+    if(NULL == pwmDevice) {
+        fprintf(stderr, "There is no PWM device\n");
+        return 1;
+    } else {
+        setPwmPeriod(pwmDevice, nano / 10);
+    }
+
+    return 0;
+}
+
+int ArtyPWMSetDuty(uint8_t channel, unsigned long nano) {
+    if(NULL == pwmDevice) {
+        fprintf(stderr, "There is no PWM device\n");
+        return 1;
+    } else {
+        setPwmDuty(pwmDevice, channel + 1, nano / 10);
+    }
+
+    return 0;
+}
+
 
 /* Opens a new SPI channel 
     returns 1 if the port has already been opened

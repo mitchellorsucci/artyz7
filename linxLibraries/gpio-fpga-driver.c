@@ -72,7 +72,7 @@ GPIO GPIO_init(uint8_t uioNum, uint8_t mapNum) {
  		-1 otherwise
 
 ******************************************************************************/
-int8_t setPinMode(GPIO vm, int8_t pinNum, int8_t direction) {
+int8_t setPinMode(GPIO vm, uint8_t channel, int8_t pinNum, int8_t direction) {
 	if(pinNum > CHANNEL_MAX_SIZE || pinNum < CHANNEL_MIN_SIZE || direction > INPUT || direction < OUTPUT) {
 		fprintf(stderr, "Invalid Argument passed to setPinMode()\n");
 		fprintf(stderr, "Please look at the valid function arguments\n");
@@ -80,14 +80,14 @@ int8_t setPinMode(GPIO vm, int8_t pinNum, int8_t direction) {
 	}
 
 	/* Get the current settings for direction */
-	uint32_t currentDir = ACCESS_REG(vm, CHANNEL_1_DIRECTION);
+	uint32_t currentDir = ACCESS_REG(vm, CHANNEL_1_DIRECTION + ((channel - 1) * 8));
 
 	/* Clear the bit in question */
 	currentDir &= ~(1 << (pinNum - 1));
 	currentDir |= (direction << (pinNum - 1));
 
 	/* Set the new configuration */
-	ACCESS_REG(vm, CHANNEL_1_DIRECTION) = currentDir;
+	ACCESS_REG(vm, CHANNEL_1_DIRECTION + ((channel - 1) * 8)) = currentDir;
 	return 0;
 }
 
@@ -110,7 +110,7 @@ int8_t setPinMode(GPIO vm, int8_t pinNum, int8_t direction) {
  		a write to a pin that is INPUT mode has no effect
 
 ******************************************************************************/
-int8_t digitalWrite(GPIO vm, int8_t pinNum, int8_t value) {
+int8_t digitalWrite(GPIO vm, uint8_t channel, int8_t pinNum, int8_t value) {
 	if(pinNum > CHANNEL_MAX_SIZE || pinNum < CHANNEL_MIN_SIZE || value < LOW) {
 		fprintf(stderr, "Invalid Argument passed to digitalWrite()\n");
 		fprintf(stderr, "Please look at the valid function arguments\n");
@@ -119,12 +119,12 @@ int8_t digitalWrite(GPIO vm, int8_t pinNum, int8_t value) {
 	value = !!value; /* convert any thing over 0 to a 1 */
 
 	/* Get the current settings for value */
-	uint32_t currentVal = ACCESS_REG(vm, CHANNEL_1_DATA);
+	uint32_t currentVal = ACCESS_REG(vm, CHANNEL_1_DATA + ((channel - 1) * 8));
 		/* Clear the bit in question */
 	currentVal &= ~(1 << (pinNum - 1));
 	currentVal |= (value << (pinNum - 1));
 	
-	ACCESS_REG(vm, CHANNEL_1_DATA) = currentVal;
+	ACCESS_REG(vm, CHANNEL_1_DATA + ((channel - 1) * 8)) = currentVal;
 	return 0;
 }
 
@@ -149,14 +149,14 @@ int8_t digitalWrite(GPIO vm, int8_t pinNum, int8_t value) {
  		and will return an arbitrary value
 
 ******************************************************************************/
-int8_t digitalRead(GPIO vm, int8_t pinNum) {
+int8_t digitalRead(GPIO vm, uint8_t channel, int8_t pinNum) {
 	if(pinNum > CHANNEL_MAX_SIZE || pinNum < CHANNEL_MIN_SIZE) {
 		printf("Invalid Argument passed to digitalRead()\n");
 		printf("Please look at the valid function arguments\n");
 		return -1;
 	}
 
-	return ((ACCESS_REG(vm, CHANNEL_1_DATA) >> (pinNum - 1)) & 0x01);
+	return ((ACCESS_REG(vm, CHANNEL_1_DATA + ((channel - 1) * 8)) >> (pinNum - 1)) & 0x01);
 }
 
 

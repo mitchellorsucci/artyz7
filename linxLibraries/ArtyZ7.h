@@ -10,15 +10,20 @@
 #include <linux/spi/spidev.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <dirent.h>
 #include "gpio-fpga.h"
 #include "pwm-fpga.h"
 
+/* Macro for calculating Spi channel numbers */
 #define GET_SPI_CHANNEL(channel) 32766 - channel
+
+/* Base File Port defines */
 #define I2C_BASE_PORT       "/dev/i2c-"
 #define UART_BASE_PORT      "/dev/ttyS"
+#define UIO_BASE            "/sys/class/uio/"
 #define MAX_DEVICE_NUM_COMM     10
-#define MAX_DEVICE_NUM_IO       5
 
+// Operational masks for SPI
 #define MSBFIRST                0
 #define LSBFIRST                1
 
@@ -40,6 +45,15 @@ typedef struct UART {
 
 int ArtyInit();
 
+int ArtyDigitalWrite(uint8_t channel, uint8_t pin, uint8_t value);
+int ArtyDigitalRead(uint8_t channel, uint8_t pin);
+int ArtySetPinMode(uint8_t channel, uint8_t pin, uint8_t mode);
+
+int ArtyPWMenable();
+int ArtyPWMSetFrequency(unsigned long nano);
+int ArtyPWMSetDuty(uint8_t channel, unsigned long nano);
+int ArtyPWMdisable();
+
 int ArtySpiOpenMaster(uint8_t channel);
 int ArtySpiSetBitOrder(uint8_t channel, uint8_t bitOrder);
 int ArtySpiSetMode(uint8_t channel, uint8_t mode);
@@ -60,3 +74,4 @@ int ArtyUartWrite(uint8_t channel, uint8_t numBytes, uint8_t * txbuffer);
 int ArtyUartClose(uint8_t channel);
 uint8_t reverseBits(uint8_t b);
 
+int ArtyDeInit();

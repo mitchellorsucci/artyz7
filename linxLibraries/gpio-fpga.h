@@ -52,9 +52,9 @@ typedef void * GPIO;
 
 /**************************FUNC DEFITIONS****************************/
 GPIO GPIO_init(uint8_t uioNum, uint8_t mapNum);
-int8_t setPinMode(GPIO vm, int8_t pinNum, int8_t direction);
-int8_t digitalWrite(GPIO vm, int8_t pinNum, int8_t value);
-int8_t digitalRead(GPIO vm, int8_t pinNum);
+int8_t setPinMode(GPIO vm, uint8_t channel, int8_t pinNum, int8_t direction);
+int8_t digitalWrite(GPIO vm, uint8_t channel, int8_t pinNum, int8_t value);
+int8_t digitalRead(GPIO vm, uint8_t channel, int8_t pinNum);
 int8_t setChannelValue(GPIO vm, uint32_t valMask, int8_t channel);
 uint32_t readChannelValue(GPIO vm, int8_t channel);
 int8_t setChannelDirection(GPIO vm, uint32_t dirMask, int8_t channel);
