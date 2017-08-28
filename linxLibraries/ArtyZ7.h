@@ -59,6 +59,7 @@ int ArtySpiSetBitOrder(uint8_t channel, uint8_t bitOrder);
 int ArtySpiSetMode(uint8_t channel, uint8_t mode);
 int ArtySpiSetMaxSpeed(uint8_t channel, unsigned long speed);
 int ArtySpiTransfer(uint8_t channel, uint8_t * tx_buffer, uint8_t * rx_buffer, uint8_t numBytes);
+unsigned int ArtyGetSpiSpeed(uint8_t channel);
 int ArtySpiCloseMaster(uint8_t channel);
 
 int ArtyI2COpenMaster(uint8_t channel);

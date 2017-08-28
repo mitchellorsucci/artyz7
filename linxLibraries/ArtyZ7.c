@@ -47,6 +47,7 @@ int ArtyInit() {
         gpioDevice = GPIO_init(gpioNum, 0);
         fprintf(stderr, "GPIO Device mapped as uio%d\n", gpioNum);
     }
+    
     return 0;
 }
 
@@ -179,7 +180,8 @@ int ArtySpiOpenMaster(uint8_t channel) {
 
     ArtySpiSetBitOrder(channel, MSBFIRST);  // Default to MSB first
     ArtySpiSetMode(channel, SPI_MODE_0);    // Default to Spi Mode 0
-    ArtySpiSetMaxSpeed(channel, 100000);    // Default to 100KHz
+    (*spiDevices[channel]).maxSpeed = ArtyGetSpiSpeed(channel);
+    ArtySpiSetMaxSpeed(channel, 0);
     (*spiDevices[channel]).cs = 0;          // Default to CS 0
     return 0;
 
@@ -224,16 +226,15 @@ int ArtySpiSetMaxSpeed(uint8_t channel, unsigned long speed) {
     }
 
     int status;
-    if((status = ioctl((*spiDevices[channel]).spiFD, SPI_IOC_WR_MAX_SPEED_HZ, &speed)) < 0) {
+    if((status = ioctl((*spiDevices[channel]).spiFD, SPI_IOC_WR_MAX_SPEED_HZ, &(*spiDevices[channel]).maxSpeed)) < 0) {
         perror("Failed to Set SPI Write Speed: ");
         return 1;
 	}
-	if((status = ioctl((*spiDevices[channel]).spiFD, SPI_IOC_RD_MAX_SPEED_HZ, &speed)) < 0) {
+	if((status = ioctl((*spiDevices[channel]).spiFD, SPI_IOC_RD_MAX_SPEED_HZ, &(*spiDevices[channel]).maxSpeed)) < 0) {
         perror("Failed to Set SPI Read Speed: ");
         return 1;
 	}
-    
-    (*spiDevices[channel]).maxSpeed = speed;
+
     return 0;
 }
 
@@ -266,6 +267,31 @@ int ArtySpiTransfer(uint8_t channel, uint8_t * tx_buffer, uint8_t * rx_buffer, u
     }
     
     return status;
+}
+
+/* Returns NULL if the file does not exist */
+/* Returns the spi transfer speed set in the FPGA hardware */
+unsigned int ArtyGetSpiSpeed(uint8_t channel) {
+    unsigned int result = 0;
+    char filePath[100];
+    sprintf(filePath, "/sys/class/spi_master/spi%d/of_node/spidev@0/spi-max-frequency", GET_SPI_CHANNEL(channel));
+    FILE * maxFreq = fopen(filePath, "r");
+    if(NULL == maxFreq) {
+        fprintf(stderr, "The spi-max-frequency file does not exist\n");
+        return 1;
+    }
+    unsigned char fileData[5]; // 32 bit value to be read....4 locations plus terminating character
+    fgets(fileData, 5, maxFreq);
+    unsigned char * index = fileData;
+    for(int i = 3; i > -1; i--) {
+        unsigned int tempValue = *index; // Get the data stored and convert to 32 bit value
+        for(int j = 1; j <= i; j++) {
+            tempValue *= 256; // Do the hexadecimal to decimal conversion
+        }
+        result += tempValue;
+        index++;
+    }
+    return result;
 }
 
 int ArtySpiCloseMaster(uint8_t channel) {
