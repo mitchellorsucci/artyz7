@@ -1,10 +1,12 @@
 #include "ArtyZ7.h"
 
+static void populateGpioData();
+
 SPIdata * spiDevices[MAX_DEVICE_NUM_COMM];    
 I2Cdata * i2cDevices[MAX_DEVICE_NUM_COMM];
 UARTdata * uartDevices[MAX_DEVICE_NUM_COMM];
 PWM pwmDevice = NULL;
-GPIO gpioDevice = NULL;
+GPIOdata * gpioMeta = NULL;
 
 int ArtyInit() {
     for(int i = 0; i < MAX_DEVICE_NUM_COMM; i++) {
@@ -25,7 +27,7 @@ int ArtyInit() {
             perror("");
             fprintf(stderr, "There are no PWM or GPIO devices\n");
             pwmDevice = NULL;
-            gpioDevice = NULL;
+            gpioMeta = NULL;
             break;
         } else if (NULL == uios) {
             break; 
@@ -44,7 +46,10 @@ int ArtyInit() {
         fprintf(stderr, "PWM Device mapped as uio%d\n", pwmNum); 
     }
     if(gpioNum > -1) {
-        gpioDevice = GPIO_init(gpioNum, 0);
+        gpioMeta = (GPIOdata *) malloc(sizeof(GPIOdata));
+        (*gpioMeta).gpioDevice = GPIO_init(gpioNum, 0);
+        (*gpioMeta).uioNum = gpioNum;
+        populateGpioData();
         fprintf(stderr, "GPIO Device mapped as uio%d\n", gpioNum);
     }
     
@@ -56,43 +61,160 @@ int ArtyDeInit() {
         PWM_Close(pwmDevice);
         pwmDevice = NULL;
     }
-    if(NULL != gpioDevice) {
-        GPIO_Close(gpioDevice);
-        gpioDevice = NULL;
+    if(NULL != gpioMeta) {
+        GPIO_Close((*gpioMeta).gpioDevice);
+        free(gpioMeta);
+        gpioMeta = NULL;
     }
 
     return 0;
 }
 
-int ArtySetPinMode(uint8_t channel, uint8_t pin, uint8_t mode) {
-    if(NULL == gpioDevice) {
+static void populateGpioData() {
+    char filePath[100];
+    char addressString[11];
+    /************************************************
+    *   Get path information from UIO directory
+    ************************************************/
+    sprintf(filePath, "%suio%d/maps/map0/addr", UIO_BASE, (*gpioMeta).uioNum);
+    FILE * addressPath = fopen(filePath, "r");
+    if(NULL == addressPath) {
+        fprintf(stderr, "uioNum = %d\n", (*gpioMeta).uioNum);
+        fprintf(stderr, "The specified address file for UIO does not exist\n");
+        return;
+    }
+    if(NULL == fgets(addressString, 11, addressPath)) {
+        fprintf(stderr, "Unable to read from address UIO file\n");
+        return;
+    }
+
+    char * adx = &(addressString[2]);
+    char dtPath[50];
+    sprintf(dtPath, "/proc/device-tree/gpio@%s/", adx);
+    char isDualPath[50];
+    char chan1Path[50];
+    sprintf(isDualPath, "%sxlnx,is-dual", dtPath);
+    sprintf(chan1Path, "%sxlnx,gpio-width", dtPath);
+    
+
+    /************************************************
+    *   Get dual channel information from device-tree
+    ************************************************/
+    uint8_t dualInfo[5];
+    FILE * dualFile = fopen(isDualPath, "r");
+    if(NULL == dualFile) {
+        fprintf(stderr, "Unable to open Dual channel file\n");
+        return;
+    }
+    if(NULL == fgets(dualInfo, 5, dualFile)) {
+        fprintf(stderr, "Unable to read dual Channel info\n");
+        return;
+    }
+    (*gpioMeta).isDual = dualInfo[3];
+
+    
+    /************************************************
+    *   Get channel 1 information from device-tree
+    ************************************************/
+    uint8_t chan1Info[5];
+    FILE * chan1File = fopen(chan1Path, "r");
+    if(NULL == chan1File) {
+        fprintf(stderr, "Unable to open channel 1 file\n");
+        return;
+    }
+    if(NULL == fgets(chan1Info, 5, chan1File)) {
+        fprintf(stderr, "Unable to read channel 1 info\n");
+        return;
+    }
+    (*gpioMeta).channel1Width = chan1Info[3];
+
+    
+    /************************************************
+    *   Get channel 2 information from device-tree
+    ************************************************/
+    if((*gpioMeta).isDual) {
+        char chan2Path[50];
+        sprintf(chan2Path, "%sxlnx,gpio2-width", dtPath);
+        uint8_t chan2Info[5];
+        FILE * chan2File = fopen(chan2Path, "r");
+        if(NULL == chan1File) {
+            fprintf(stderr, "Unable to open channel 2 file\n");
+            return;
+        }
+        if(NULL == fgets(chan2Info, 5, chan2File)) {
+            fprintf(stderr, "Unable to read channel 2 info\n");
+            return;
+        }
+        (*gpioMeta).channel2Width = chan2Info[3];
+    } else {
+        (*gpioMeta).channel2Width = 0;
+    }
+
+    /*
+    fprintf(stderr, "Is-Dual: %d\n", (*gpioMeta).isDual);
+    fprintf(stderr, "CH1-Width: %d\n", (*gpioMeta).channel1Width);
+    fprintf(stderr, "CH2-Width: %d\n", (*gpioMeta).channel2Width);
+    */
+}
+
+int ArtySetPinMode(uint8_t pin, uint8_t mode) {
+    if(NULL == gpioMeta || (*gpioMeta).gpioDevice == NULL) {
         fprintf(stderr, "There is no GPIO device\n");
         return 1;
     } else {
-        setPinMode(gpioDevice, channel + 1, pin + 1, mode);
+        if(pin > ((*gpioMeta).channel1Width - 1)) {
+            setPinMode((*gpioMeta).gpioDevice, 2, pin - (*gpioMeta).channel1Width + 1, mode);
+        } else {
+            setPinMode((*gpioMeta).gpioDevice, 1, pin + 1, mode);
+        }
     }
 
     return 0;
 }
 
-int ArtyDigitalWrite(uint8_t channel, uint8_t pin, uint8_t value) {
-    if(NULL == gpioDevice) {
+int ArtyDigitalWrite(uint8_t pin, uint8_t value) {
+    if(NULL == gpioMeta || (*gpioMeta).gpioDevice == NULL) {
         fprintf(stderr, "There is no GPIO device\n");
         return 1;
     } else {
-        digitalWrite(gpioDevice, channel + 1, pin + 1, value);
+        if (pin > ((*gpioMeta).channel1Width - 1)) {
+            digitalWrite((*gpioMeta).gpioDevice, 2, (pin - (*gpioMeta).channel1Width) + 1, value);
+        } else {
+            digitalWrite((*gpioMeta).gpioDevice, 1, pin + 1, value);
+        }
     }
 
     return 0;
 }
 
-int ArtyDigitalRead(uint8_t channel, uint8_t pin) {
-    if(NULL == gpioDevice) {
+int ArtyDigitalRead(uint8_t pin) {
+    if(NULL == gpioMeta || (*gpioMeta).gpioDevice == NULL) {
         fprintf(stderr, "There is no GPIO device\n");
         return 1;
-    } 
+    } else {
+        if (pin > ((*gpioMeta).channel1Width - 1)) {
+            return digitalRead((*gpioMeta).gpioDevice, 2, pin - (*gpioMeta).channel1Width + 1);
+        } else {
+            return digitalRead((*gpioMeta).gpioDevice, 1, pin + 1);
+        }
+    }
 
-    return digitalRead(gpioDevice, channel + 1, pin + 1);
+    return 0;
+}
+
+int ArtyGetDIOChannels(uint8_t * numChannels, uint8_t * channelArray) {
+    if(NULL == gpioMeta || (*gpioMeta).gpioDevice == NULL) {
+        fprintf(stderr, "There is no GPIO device\n");
+        return 1;
+    }
+
+    *numChannels = (*gpioMeta).channel1Width + (*gpioMeta).channel2Width;
+    uint8_t * index = channelArray;
+    for(int i = 0; i < *numChannels; i++) {
+        *index = i;
+        index++;
+    }
+    return 0;
 }
 
 int ArtyPWMenable() {

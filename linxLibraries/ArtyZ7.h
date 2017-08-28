@@ -43,11 +43,21 @@ typedef struct UART {
     int uartFD;     // File Descriptor for the UART channel
 } UARTdata;
 
+typedef struct GPIOinfo {
+    GPIO gpioDevice;
+    uint8_t uioNum;
+    uint8_t isDual;
+    uint8_t channel1Width;
+    uint8_t channel2Width;
+} GPIOdata;
+
 int ArtyInit();
 
-int ArtyDigitalWrite(uint8_t channel, uint8_t pin, uint8_t value);
-int ArtyDigitalRead(uint8_t channel, uint8_t pin);
-int ArtySetPinMode(uint8_t channel, uint8_t pin, uint8_t mode);
+int ArtyDigitalWrite(uint8_t pin, uint8_t value);
+int ArtyDigitalRead(uint8_t pin);
+int ArtySetPinMode(uint8_t pin, uint8_t mode);
+int ArtyGetDIOChannels(uint8_t * numChannels, uint8_t * channelArray);
+static void populateGpioData();
 
 int ArtyPWMenable();
 int ArtyPWMSetFrequency(unsigned long nano);
