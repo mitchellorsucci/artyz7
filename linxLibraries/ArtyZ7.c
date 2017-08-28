@@ -1,6 +1,7 @@
 #include "ArtyZ7.h"
 
 static void populateGpioData();
+static unsigned int ArtyGetSpiSpeed(uint8_t channel);
 
 SPIdata * spiDevices[MAX_DEVICE_NUM_COMM];    
 I2Cdata * i2cDevices[MAX_DEVICE_NUM_COMM];
@@ -360,6 +361,17 @@ int ArtySpiSetMaxSpeed(uint8_t channel, unsigned long speed) {
     return 0;
 }
 
+unsigned int ArtyGetSpiTransferSpeed(uint8_t channel) {
+    if(NULL == spiDevices[channel]) {
+        fprintf(stderr, "A Spi device has not been opened on this channel: %d\n", channel);
+        return 1;
+    } else {
+        return (*spiDevices[channel]).maxSpeed;
+    }
+    
+    return 0;
+}
+
 
 int ArtySpiTransfer(uint8_t channel, uint8_t * tx_buffer, uint8_t * rx_buffer, uint8_t numBytes) {
     if(NULL == spiDevices[channel]) {
@@ -393,7 +405,12 @@ int ArtySpiTransfer(uint8_t channel, uint8_t * tx_buffer, uint8_t * rx_buffer, u
 
 /* Returns NULL if the file does not exist */
 /* Returns the spi transfer speed set in the FPGA hardware */
-unsigned int ArtyGetSpiSpeed(uint8_t channel) {
+static unsigned int ArtyGetSpiSpeed(uint8_t channel) {
+    if(NULL == spiDevices[channel]) {
+        fprintf(stderr, "A Spi device has not been opened on this channel: %d\n", channel);
+        return 1;
+    }
+    
     unsigned int result = 0;
     char filePath[100];
     sprintf(filePath, "/sys/class/spi_master/spi%d/of_node/spidev@0/spi-max-frequency", GET_SPI_CHANNEL(channel));

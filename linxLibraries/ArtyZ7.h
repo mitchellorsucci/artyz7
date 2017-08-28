@@ -57,7 +57,7 @@ int ArtyDigitalWrite(uint8_t pin, uint8_t value);
 int ArtyDigitalRead(uint8_t pin);
 int ArtySetPinMode(uint8_t pin, uint8_t mode);
 int ArtyGetDIOChannels(uint8_t * numChannels, uint8_t * channelArray);
-static void populateGpioData();
+
 
 int ArtyPWMenable();
 int ArtyPWMSetFrequency(unsigned long nano);
@@ -69,7 +69,7 @@ int ArtySpiSetBitOrder(uint8_t channel, uint8_t bitOrder);
 int ArtySpiSetMode(uint8_t channel, uint8_t mode);
 int ArtySpiSetMaxSpeed(uint8_t channel, unsigned long speed);
 int ArtySpiTransfer(uint8_t channel, uint8_t * tx_buffer, uint8_t * rx_buffer, uint8_t numBytes);
-unsigned int ArtyGetSpiSpeed(uint8_t channel);
+unsigned int ArtyGetSpiTransferSpeed(uint8_t channel);
 int ArtySpiCloseMaster(uint8_t channel);
 
 int ArtyI2COpenMaster(uint8_t channel);
