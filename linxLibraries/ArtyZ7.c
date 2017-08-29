@@ -1,14 +1,34 @@
 #include "ArtyZ7.h"
 
+/******************Function Declarations*****************/
 static void populateGpioData();
 static unsigned int ArtyGetSpiSpeed(uint8_t channel);
+static uint8_t reverseBits(uint8_t b);
 
+
+/*********************************************************
+ *              The base data structures
+ ********************************************************/
 SPIdata * spiDevices[MAX_DEVICE_NUM_COMM];    
 I2Cdata * i2cDevices[MAX_DEVICE_NUM_COMM];
 UARTdata * uartDevices[MAX_DEVICE_NUM_COMM];
 PWM pwmDevice = NULL;
 GPIOdata * gpioMeta = NULL;
 
+
+
+/*********************************************************
+ * @Name:   ArtyInit()
+ * @pre:    Notes on usage and constraints is found in
+ *          'NotesandKnownIssues.md'
+ * @param:  None
+ * @return: 0 on success, 1 on failure
+ *
+ * Initializes the underlying data structures for further use
+ * Also, initializes the GPIO and PWM functionality if they
+ * are already present in the device-tree
+ *
+ ********************************************************/
 int ArtyInit() {
     for(int i = 0; i < MAX_DEVICE_NUM_COMM; i++) {
         spiDevices[i] = NULL;
@@ -57,6 +77,18 @@ int ArtyInit() {
     return 0;
 }
 
+
+/*********************************************************
+ * @Name:   ArtyDeInit()
+ * @pre:    Notes on usage and constraints is found in
+ *          'NotesandKnownIssues.md'
+ * @param:  None
+ * @return: 0 always
+ *
+ * Closes any open PWM or GPIO devices that had earlier been
+ * instantiated
+ *
+ ********************************************************/
 int ArtyDeInit() {
     if(NULL != pwmDevice) {
         PWM_Close(pwmDevice);
@@ -158,6 +190,19 @@ static void populateGpioData() {
     */
 }
 
+/*********************************************************
+ * @Name:   ArtySetPinMode()
+ * @pre:    Assumes a gpio device has already been instantiated
+ *          and that there are valid gpio channels to work on
+ *          Does not check to see if the channels are valid
+ * @param:  uint8_t pin     The pin to work on
+ *          uint8_t mode    the mode to set it to such as
+ *                          "OUTPUT" or "INPUT"
+ * @return: 0 on success, 1 on failure
+ *
+ * Sets the mode of a specific GPIO pin
+ *
+ ********************************************************/
 int ArtySetPinMode(uint8_t pin, uint8_t mode) {
     if(NULL == gpioMeta || (*gpioMeta).gpioDevice == NULL) {
         fprintf(stderr, "There is no GPIO device\n");
@@ -173,6 +218,22 @@ int ArtySetPinMode(uint8_t pin, uint8_t mode) {
     return 0;
 }
 
+/*********************************************************
+ * @Name:   ArtyDigitalWrite()
+ * @pre:    Assumes a gpio device has already been instantiated
+ *          and that there are valid gpio channels to work on
+ *          Does not check to see if the channels are valid
+ *          Does not check if pin mode has been set to in our out
+ *          Just attempts to write the value
+ * @param:  uint8_t pin     The pin to work on
+ *          uint8_t value   The value to set the pin to such as
+ *                          "HIGH" or "LOW". Any non-zero values
+ *                          are taken to mean the same as "HIGH"
+ * @return: 0 on success, 1 on failure
+ *
+ * Writes 'value' to GPIO 'pin'
+ *
+ ********************************************************/
 int ArtyDigitalWrite(uint8_t pin, uint8_t value) {
     if(NULL == gpioMeta || (*gpioMeta).gpioDevice == NULL) {
         fprintf(stderr, "There is no GPIO device\n");
@@ -188,10 +249,24 @@ int ArtyDigitalWrite(uint8_t pin, uint8_t value) {
     return 0;
 }
 
+/*********************************************************
+ * @Name:   ArtyDigitalRead()
+ * @pre:    Assumes a gpio device has already been instantiated
+ *          and that there are valid gpio channels to work on
+ *          Does not check to see if the channels are valid
+ *          Does not check to see if the GPIO has been set to
+ *          Input. Just attempts to read the value
+ * @param:  uint8_t pin     The pin to read
+ *
+ * @return: the pin value on success, -1 on failure
+ *
+ * Reads the value from the GPIO 'pin'
+ *
+ ********************************************************/
 int ArtyDigitalRead(uint8_t pin) {
     if(NULL == gpioMeta || (*gpioMeta).gpioDevice == NULL) {
         fprintf(stderr, "There is no GPIO device\n");
-        return 1;
+        return -1;
     } else {
         if (pin > ((*gpioMeta).channel1Width - 1)) {
             return digitalRead((*gpioMeta).gpioDevice, 2, pin - (*gpioMeta).channel1Width + 1);
@@ -203,6 +278,26 @@ int ArtyDigitalRead(uint8_t pin) {
     return 0;
 }
 
+/*********************************************************
+ * @Name:   ArtyGetDIOChannels()
+ * @pre:    Assumes a gpio device has already been instantiated
+ *          and that there are valid gpio channels to work on
+ *          Does not check to see if the channels are valid
+ *          Does not check to see if the GPIO has been set to
+ *          Input. Just attempts to read the value
+ * @param:  uint8_t * numChannels   pointer to the location
+ *                                  where the number of channels will
+ *                                  stored after function call
+ *          uint8_t * channelArray  pointer to the location where
+ *                                  an array of these valid channels
+ *                                  will be stored
+ *
+ * @return: 0 on success, 1 on failure
+ *
+ * Places the valid number of GPIO channels at *numChannels
+ * Creates an array containing these valid channels at *channelArray
+ *
+ ********************************************************/
 int ArtyGetDIOChannels(uint8_t * numChannels, uint8_t * channelArray) {
     if(NULL == gpioMeta || (*gpioMeta).gpioDevice == NULL) {
         fprintf(stderr, "There is no GPIO device\n");
@@ -218,6 +313,17 @@ int ArtyGetDIOChannels(uint8_t * numChannels, uint8_t * channelArray) {
     return 0;
 }
 
+/*********************************************************
+ * @Name:   ArtyPWMenable()
+ * @pre:    Assumes a PWM device has already been instantiated
+ *
+ * @param:  none
+ *
+ * @return: 0 on success, 1 on failure
+ *
+ * Enables the PWM channels
+ *
+ ********************************************************/
 int ArtyPWMenable() {
     if(NULL == pwmDevice) {
         fprintf(stderr, "There is no PWM device to enable\n");
@@ -229,6 +335,17 @@ int ArtyPWMenable() {
     return 0;
 }
 
+/*********************************************************
+ * @Name:   ArtyPWMdisable()
+ * @pre:    Assumes a PWM device has already been instantiated
+ *
+ * @param:  none
+ *
+ * @return: 0 on success, 1 on failure
+ *
+ * Disables the PWM channels
+ *
+ ********************************************************/
 int ArtyPWMdisable() {
     if(NULL == pwmDevice) {
         fprintf(stderr, "There is no PWM device to disable\n");
@@ -240,7 +357,21 @@ int ArtyPWMdisable() {
     return 0;
 }
 
-// Sets Frequency for all PWM channels
+
+/*********************************************************
+ * @Name:   ArtyPWMSetFrequency()
+ * @pre:    Assumes a PWM device has already been instantiated
+ *          and the number of channels has been set in HW design
+ *          Assumes a 100Mhz PL clock. Function will still work
+ *          with a different clock rate, but does not set in nanoseconds
+ * @param:  unsigned long nano      number of nanoseconds to set the
+ *                                   frequency of the PWM channels to
+ *
+ * @return: 0 on success, 1 on failure
+ *
+ * Sets the frequency, in nanoseconds, of all the PWM channels
+ *
+ ********************************************************/
 int ArtyPWMSetFrequency(unsigned long nano) {
     if(NULL == pwmDevice) {
         fprintf(stderr, "There is no PWM device\n");
@@ -252,6 +383,22 @@ int ArtyPWMSetFrequency(unsigned long nano) {
     return 0;
 }
 
+/*********************************************************
+ * @Name:   ArtyPWMSetDuty()
+ * @pre:    Assumes a PWM device has already been instantiated
+ *          and the number of channels has been set in HW design
+ *          Assumes a 100Mhz PL clock. Function will still work
+ *          with a different clock rate, but does not set in nanoseconds
+ * @param:  uint8_t channel         the PWM channel to work on -- zero-indexed
+ *          unsigned long nano      number of nanoseconds to set the
+ *                                   frequency of the PWM channels to
+ *
+ * @return: 0 on success, 1 on failure
+ *
+ * Sets the duty cycle or "time on", in nanoseconds,
+ * of a specific PWM channel
+ *
+ ********************************************************/
 int ArtyPWMSetDuty(uint8_t channel, unsigned long nano) {
     if(NULL == pwmDevice) {
         fprintf(stderr, "There is no PWM device\n");
@@ -264,17 +411,23 @@ int ArtyPWMSetDuty(uint8_t channel, unsigned long nano) {
 }
 
 
-/* Opens a new SPI channel 
-    returns 1 if the port has already been opened
-    returns 0 on success                               
-
-    Sets SPI channel to SPI_MODE_0
-    Sets MaxSpeed to 100Khz
-    Sets CS to 0
-    Sets MSB mode to MSB
-    Sets bit transfer width to 8            */
+/*********************************************************
+ * @Name:   ArtySpiOpenMaster()
+ * @pre:    Assumes spi hardware is present in hardware and in the device tree
+ * @param:  uint8_t channel         The SPI channel to open
+ *
+ * @return: 0 on success, 1 on failure
+ *
+ * Opens and prepares a spi channel for transfer with the following settings:
+ *  Sets SPI channel to SPI_MODE_0
+ *  Sets MaxSpeed to the speed set in hardware design
+ *  Sets CS to 0
+ *  Sets MSB mode to MSB
+ *  Sets bit transfer width to 8 
+ *
+ ********************************************************/
 int ArtySpiOpenMaster(uint8_t channel) {
-    if(NULL != spiDevices[channel]) {
+    if(NULL != spiDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
         fprintf(stderr, "A Spi device already exists on this channel: %d\n", channel);
         return 1;
     }
@@ -310,8 +463,19 @@ int ArtySpiOpenMaster(uint8_t channel) {
 
 }
 
+/*********************************************************
+ * @Name:   ArtySpiSetBitOrder()
+ * @pre:    Assumes the spi channel is open and valid
+ * @param:  uint8_t channel         The SPI channel to open
+ *          uint8_t bitOrder        either MSBFIRST or LSBFIRST
+ *
+ * @return: 0 on success, 1 on failure
+ *
+ * Sets Bit order of SPI Transfers, either MSB or LSB first
+ *
+ ********************************************************/
 int ArtySpiSetBitOrder(uint8_t channel, uint8_t bitOrder) {
-    if(NULL == spiDevices[channel]) {
+    if(NULL == spiDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
         fprintf(stderr, "A Spi device has not been opened on this channel: %d\n", channel);
         return 1;
     }
@@ -320,8 +484,22 @@ int ArtySpiSetBitOrder(uint8_t channel, uint8_t bitOrder) {
     return 0;
 }
 
+/*********************************************************
+ * @Name:   ArtySpiSetBitOrder()
+ * @pre:    Assumes the spi channel is open and valid
+ * @param:  uint8_t channel     The SPI channel to open
+ *          uint8_t mode        SPIDEV provides some great macros for this
+ *                               SPI_MODE_0      SPI_MODE_2
+ *                               SPI_MODE_1      SPI_MODE_3 
+ *                              are the recommended arguments to use for this parameter
+ *
+ * @return: 0 on success, 1 on failure
+ *
+ * Sets the SPI mode to be used for transfers
+ *
+ ********************************************************/
 int ArtySpiSetMode(uint8_t channel, uint8_t mode) {
-    if(NULL == spiDevices[channel]) {
+    if(NULL == spiDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
         fprintf(stderr, "A Spi device has not been opened on this channel: %d\n", channel);
         return 1;
     }
@@ -341,9 +519,23 @@ int ArtySpiSetMode(uint8_t channel, uint8_t mode) {
 
 }
 
-
+/*********************************************************
+ * @Name:   ArtySpiSetMaxSpeed()
+ * @pre:    Assumes the spi channel is open and valid
+ * @param:  uint8_t channel     The SPI channel to open
+ *          unsigned long speed The desired maxspeed for SPI transfers
+ *
+ * @return: 0 on success, 1 on failure
+ *
+ * Sets MAX transfer speed of SPI transfers
+ * It should be noted that this function will do nothing for
+ * The axi-quad-spi IP provided by Vivado as SPI transfers will
+ * always take place at the rate specified by ext-spi-clock
+ * in hardware design
+ * 
+ ********************************************************/
 int ArtySpiSetMaxSpeed(uint8_t channel, unsigned long speed) {
-    if(NULL == spiDevices[channel]) {
+    if(NULL == spiDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
         fprintf(stderr, "A Spi device has not been opened on this channel: %d\n", channel);
         return 1;
     }
@@ -361,8 +553,21 @@ int ArtySpiSetMaxSpeed(uint8_t channel, unsigned long speed) {
     return 0;
 }
 
+/*********************************************************
+ * @Name:   ArtySpiGetSpiTransferSpeed()
+ * @pre:    Assumes the spi channel is open and valid
+ * @param:  uint8_t channel     The SPI channel to get speeds of
+ *
+ * @return: unsigned int    The value of the spi-max-frequency field
+ *                           set in the device-tree spidev slave node
+ *                           returns 1 on failure
+ *
+ * Returns the value specified by the spi-max-frequency field
+ * in the device tree for this specific spi channel
+ * 
+ ********************************************************/
 unsigned int ArtyGetSpiTransferSpeed(uint8_t channel) {
-    if(NULL == spiDevices[channel]) {
+    if(NULL == spiDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
         fprintf(stderr, "A Spi device has not been opened on this channel: %d\n", channel);
         return 1;
     } else {
@@ -372,11 +577,25 @@ unsigned int ArtyGetSpiTransferSpeed(uint8_t channel) {
     return 0;
 }
 
-
+/*********************************************************
+ * @Name:   ArtySpiTransfer()
+ * @pre:    Assumes the spi channel is open and valid
+ * @param:  uint8_t channel     The SPI channel to transfer on
+ *          uint8_t * tx_buffer The location where data to be transferred is stored
+ *          uint8_t * rx_buffer The location where data to be received should be stored
+ *          uint8_t numBytes    The number of bytes to transfer/receive from the salve
+ *
+ * @return: number of bytes transferred on success, -1 on failure
+ *
+ * Transfer numBytes from tx_buffer and receives numBytes into rx_buffer
+ * Either one of these can be set to NULL if transferred or received data is to
+ * be discarded
+ * 
+ ********************************************************/
 int ArtySpiTransfer(uint8_t channel, uint8_t * tx_buffer, uint8_t * rx_buffer, uint8_t numBytes) {
-    if(NULL == spiDevices[channel]) {
+    if(NULL == spiDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
         fprintf(stderr, "A Spi device has not been opened on this channel: %d\n", channel);
-        return 1;
+        return -1;
     }
 
     if((*spiDevices[channel]).bitOrder == LSBFIRST) {
@@ -406,7 +625,7 @@ int ArtySpiTransfer(uint8_t channel, uint8_t * tx_buffer, uint8_t * rx_buffer, u
 /* Returns NULL if the file does not exist */
 /* Returns the spi transfer speed set in the FPGA hardware */
 static unsigned int ArtyGetSpiSpeed(uint8_t channel) {
-    if(NULL == spiDevices[channel]) {
+    if(NULL == spiDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
         fprintf(stderr, "A Spi device has not been opened on this channel: %d\n", channel);
         return 1;
     }
@@ -433,8 +652,18 @@ static unsigned int ArtyGetSpiSpeed(uint8_t channel) {
     return result;
 }
 
+/*********************************************************
+ * @Name:   ArtySpiCloseMaster()
+ * @pre:    Assumes the spi channel is open and valid
+ * @param:  uint8_t channel     The SPI channel to close
+ *
+ * @return: 0 on success, 1 on failure
+ *
+ * Closes the specified SPI channel
+ * 
+ ********************************************************/
 int ArtySpiCloseMaster(uint8_t channel) {
-    if(NULL == spiDevices[channel]) {
+    if(NULL == spiDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
         fprintf(stderr, "A Spi device does not exist on this channel: %d\n", channel);
         return 1;
     }
@@ -445,8 +674,19 @@ int ArtySpiCloseMaster(uint8_t channel) {
     return 1;
 }
 
+/*********************************************************
+ * @Name:   ArtyI2COpenMaster()
+ * @pre:    Assumes that I2C hardware exists and has been
+ *          loaded into the live device tree
+ * @param:  uint8_t channel     The I2C channel to open
+ *
+ * @return: 0 on success, 1 on failure
+ *
+ * Opens the specified I2C hardware at the specified channel
+ * 
+ ********************************************************/
 int ArtyI2COpenMaster(uint8_t channel) {
-    if(NULL != i2cDevices[channel]) {
+    if(NULL != i2cDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
         fprintf(stderr, "An I2C device already exists on this channel: %d\n", channel);
         return 1;
     }
@@ -465,8 +705,21 @@ int ArtyI2COpenMaster(uint8_t channel) {
     return 0;
 }
 
+/*********************************************************
+ * @Name:   ArtyI2CWrite()
+ * @pre:    Assumes that the I2C channel has already been opened
+ * @param:  uint8_t channel     The I2C channel to open
+ *          uint8_t slaveAdx    The I2C slave address to write to
+ *          uint8_t * tx_buffer The location of data to be written
+ *          uint8_t numBytes    The number of bytes to write from tx_buffer
+ *
+ * @return: 0 if all bytes are written, 1 otherwise
+ *
+ * Writes numBytes from tx_buffer to I2C device at slaveAdx
+ * 
+ ********************************************************/
 int ArtyI2CWrite(uint8_t channel, uint8_t slaveAdx, uint8_t * tx_buffer, uint8_t numBytes) {
-    if(NULL == i2cDevices[channel]) {
+    if(NULL == i2cDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
         fprintf(stderr, "An I2C device does not exist on this channel: %d\n", channel);
         return 1;
     }
@@ -484,8 +737,21 @@ int ArtyI2CWrite(uint8_t channel, uint8_t slaveAdx, uint8_t * tx_buffer, uint8_t
     return 0;
 }
 
+/*********************************************************
+ * @Name:   ArtyI2CRead()
+ * @pre:    Assumes that the I2C channel has already been opened
+ * @param:  uint8_t channel     The I2C channel to open
+ *          uint8_t slaveAdx    The I2C slave address to read from
+ *          uint8_t * rx_buffer The location where read data will be stored
+ *          uint8_t numBytes    The number of bytes to read from slaveAdx
+ *
+ * @return: 0 if all bytes requested are read, 1 otherwise
+ *
+ * Reads numBytes from the I2C device at slaveAdx into rx_buffer
+ * 
+ ********************************************************/
 int ArtyI2CRead(uint8_t channel, uint8_t slaveAdx, uint8_t * rx_buffer, uint8_t numBytes) {
-    if(NULL == i2cDevices[channel]) {
+    if(NULL == i2cDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
         fprintf(stderr, "An I2C device does not exist on this channel: %d\n", channel);
         return 1;
     }
@@ -503,8 +769,18 @@ int ArtyI2CRead(uint8_t channel, uint8_t slaveAdx, uint8_t * rx_buffer, uint8_t 
     return 0;
 }
 
+/*********************************************************
+ * @Name:   ArtyI2CCloseMaster()
+ * @pre:    Assumes that the I2C channel exists and is currently open
+ * @param:  uint8_t channel     The I2C channel to close
+ *
+ * @return: 0 on success, 1 on failure
+ *
+ * Closes the I2C channel
+ * 
+ ********************************************************/
 int ArtyI2CCloseMaster(uint8_t channel) {
-    if(NULL == i2cDevices[channel]) {
+    if(NULL == i2cDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
         fprintf(stderr, "An I2C device does not exist on this channel: %d\n", channel);
         return 1;
     }
@@ -516,10 +792,21 @@ int ArtyI2CCloseMaster(uint8_t channel) {
 }
 
 
-/* The uart port will be opened with whatever baud rate is the default for that
-    port on boot                 */
+/*********************************************************
+ * @Name:   ArtyUARTOpen()
+ * @pre:    Assumes that UART hardware exists and has been
+ *          loaded into the live device tree
+ * @param:  uint8_t channel     The UART channel to open
+ *
+ * @return: 0 on success, 1 on failure
+ *
+ * Opens the specified UART hardware at the specified channel
+ * The UART channel defaults to whatever baud rate is default
+ * for it upon boot. Usually B9600 or B115200
+ * 
+ ********************************************************/
 int ArtyUartOpen(uint8_t channel) {
-    if(NULL != uartDevices[channel]) {
+    if(NULL != uartDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
         fprintf(stderr, "A UART device already exists on this channel: %d\n", channel);
         return 1;
     }
@@ -538,8 +825,24 @@ int ArtyUartOpen(uint8_t channel) {
 
 }
 
+/*********************************************************
+ * @Name:   ArtyUartSetBaudRate()
+ * @pre:    Assumes that the UART channel has already been opened
+ * @param:  uint8_t channel     The UART channel to open
+ *          unsigned long baud  the baud rate to set the channel to
+ *              There are a limited number of supported baud rates.
+ *              They are: {50, 75, 110, 134, 150, 200, 300, 600, 1200, 1800
+ *                          2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400}
+ *
+ * @return: 0 on success, 1 on failure
+ *
+ * Attempts to set the baud rate of the UART channel.
+ * if a valid baudrate is passed, sets this rate on the UART port
+ * if an invalid baudrate is passed, does nothing, and gives an error message
+ * 
+ ********************************************************/
 int ArtyUartSetBaudRate(uint8_t channel, unsigned long baud) {
-    if(NULL == uartDevices[channel]) {
+    if(NULL == uartDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
         fprintf(stderr, "A UART device does not exist on this channel: %d\n", channel);
         return 1;
     }
@@ -590,8 +893,21 @@ int ArtyUartSetBaudRate(uint8_t channel, unsigned long baud) {
     return 0;
 }
 
+/*********************************************************
+ * @Name:   ArtyUartGetBytesAvailable()
+ * @pre:    Assumes that the UART channel has already been opened
+ * @param:  uint8_t channel     The UART channel to open
+ *          uint8_t * numBytes  location of the where the number
+ *                              of available bytes will be stored
+ *
+ * @return: 0 on success, 1 on failure
+ *
+ * Checks the UART channel to see if and how many bytes
+ * are available for reading. Stores this value at *numBytes
+ * 
+ ********************************************************/
 int ArtyUartGetBytesAvailable(uint8_t channel, uint8_t * numBytes) {
-    if(NULL == uartDevices[channel]) {
+    if(NULL == uartDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
         fprintf(stderr, "A UART device does not exist on this channel: %d\n", channel);
         return 1;
     }
@@ -607,8 +923,24 @@ int ArtyUartGetBytesAvailable(uint8_t channel, uint8_t * numBytes) {
     return 0;
 }
 
+/*********************************************************
+ * @Name:   ArtyUartRead()
+ * @pre:    Assumes that the UART channel has already been opened
+ * @param:  uint8_t channel         The UART channel to read from
+ *          uint8_t numBytes        The number of bytes to attempt to read
+ *          uint8_t * rx_buffer     The location to store received data
+ *          uint8_t * numBytesRead  Location to store number of bytes actually read at
+ *
+ * @return: 0 on success, 1 on failure or if less bytes than requested are read
+ *
+ * Reads as many bytes as possible from the UART channel until
+ * numBytes is reached. Will read less than numBytes if less bytes
+ * are available. If less than numBytes is available, stores the number
+ * of bytes actually read at *numBytesRead
+ * 
+ ********************************************************/
 int ArtyUartRead(uint8_t channel, uint8_t numBytes, uint8_t * rxbuffer, uint8_t * numBytesRead) {
-    if(NULL == uartDevices[channel]) {
+    if(NULL == uartDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
         fprintf(stderr, "A UART device does not exist on this channel: %d\n", channel);
         return 1;
     }
@@ -628,7 +960,25 @@ int ArtyUartRead(uint8_t channel, uint8_t numBytes, uint8_t * rxbuffer, uint8_t 
     return 0;
 }
 
+/*********************************************************
+ * @Name:   ArtyUartWrite()
+ * @pre:    Assumes that the UART channel has already been opened
+ * @param:  uint8_t channel         The UART channel to write to
+ *          uint8_t numBytes        The number of bytes to write
+ *          uint8_t * tx_buffer     The location of data to be written
+ *
+ * @return: 0 on success, 1 on failure or if less bytes than
+ *                  than requested are written
+ *
+ * Writes numBytes from tx_buffer to the UART channel
+ * If less bytes than numBytes is written, returns 1
+ * 
+ ********************************************************/
 int ArtyUartWrite(uint8_t channel, uint8_t numBytes, uint8_t * txbuffer) {
+    if(NULL == uartDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
+        fprintf(stderr, "A UART device does not exist on this channel: %d\n", channel);
+        return 1;
+    }
     int transmitted = write((*uartDevices[channel]).uartFD, txbuffer, numBytes);
     if(transmitted != numBytes) {
         return 1;
@@ -637,8 +987,18 @@ int ArtyUartWrite(uint8_t channel, uint8_t numBytes, uint8_t * txbuffer) {
     return 0;
 }
 
+/*********************************************************
+ * @Name:   ArtyUARTClose()
+ * @pre:    Assumes that UART channel is currently open
+ * @param:  uint8_t channel     The UART channel to close
+ *
+ * @return: 0 on success, 1 on failure
+ *
+ * Closes the specified UART channel
+ * 
+ ********************************************************/
 int ArtyUartClose(uint8_t channel) {
-    if(NULL == uartDevices[channel]) {
+    if(NULL == uartDevices[channel] || channel >= MAX_DEVICE_NUM_COMM) {
         fprintf(stderr, "A UART device does not exist on this channel: %d\n", channel);
         return 1;
     }
@@ -650,7 +1010,7 @@ int ArtyUartClose(uint8_t channel) {
 
 }
 
-uint8_t reverseBits(uint8_t b){
+static uint8_t reverseBits(uint8_t b){
 	b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
 	b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
 	b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
